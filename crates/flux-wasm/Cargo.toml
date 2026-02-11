@@ -1,0 +1,15 @@
+[package]
+name = "flux-wasm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+flux-syntax = { path = "../flux-syntax" }
+flux-errors = { path = "../flux-errors" }
+wasm-encoder.workspace = true
+
+[dev-dependencies]
+wasmtime.workspace = true
+wat.workspace = true

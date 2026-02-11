@@ -1,0 +1,94 @@
+---
+source: crates/flux-syntax/tests/parser_tests.rs
+expression: result
+---
+Ok(
+    SourceFile {
+        items: [
+            Function(
+                Function {
+                    is_export: false,
+                    name: "add",
+                    params: [
+                        Param {
+                            name: "x",
+                            ty: Some(
+                                Int(
+                                    Span {
+                                        start: 10,
+                                        end: 13,
+                                    },
+                                ),
+                            ),
+                            span: Span {
+                                start: 7,
+                                end: 13,
+                            },
+                        },
+                        Param {
+                            name: "y",
+                            ty: Some(
+                                Int(
+                                    Span {
+                                        start: 18,
+                                        end: 21,
+                                    },
+                                ),
+                            ),
+                            span: Span {
+                                start: 15,
+                                end: 21,
+                            },
+                        },
+                    ],
+                    return_type: Some(
+                        Int(
+                            Span {
+                                start: 26,
+                                end: 29,
+                            },
+                        ),
+                    ),
+                    body: Block {
+                        stmts: [
+                            Binary {
+                                op: Add,
+                                left: Var {
+                                    name: "x",
+                                    span: Span {
+                                        start: 32,
+                                        end: 33,
+                                    },
+                                },
+                                right: Var {
+                                    name: "y",
+                                    span: Span {
+                                        start: 36,
+                                        end: 37,
+                                    },
+                                },
+                                span: Span {
+                                    start: 32,
+                                    end: 37,
+                                },
+                            },
+                        ],
+                        span: Span {
+                            start: 30,
+                            end: 39,
+                        },
+                    },
+                    labels: [],
+                    span: Span {
+                        start: 0,
+                        end: 39,
+                    },
+                },
+            ),
+        ],
+        span: Span {
+            start: 0,
+            end: 39,
+        },
+    },
+)

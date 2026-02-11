@@ -1,0 +1,15 @@
+---
+source: crates/flux-syntax/tests/parser_tests.rs
+expression: result
+---
+Err(
+    Syntax {
+        message: "Expected Ident, found TyTable",
+        span: SourceSpan {
+            offset: SourceOffset(
+                9,
+            ),
+            length: 5,
+        },
+    },
+)

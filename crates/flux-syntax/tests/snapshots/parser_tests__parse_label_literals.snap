@@ -1,0 +1,42 @@
+---
+source: crates/flux-syntax/tests/parser_tests.rs
+expression: result
+---
+Ok(
+    SourceFile {
+        items: [
+            Function(
+                Function {
+                    is_export: false,
+                    name: "tagged",
+                    params: [],
+                    return_type: None,
+                    body: Block {
+                        stmts: [
+                            Label {
+                                name: "#primary",
+                                span: Span {
+                                    start: 14,
+                                    end: 22,
+                                },
+                            },
+                        ],
+                        span: Span {
+                            start: 12,
+                            end: 24,
+                        },
+                    },
+                    labels: [],
+                    span: Span {
+                        start: 0,
+                        end: 24,
+                    },
+                },
+            ),
+        ],
+        span: Span {
+            start: 0,
+            end: 24,
+        },
+    },
+)

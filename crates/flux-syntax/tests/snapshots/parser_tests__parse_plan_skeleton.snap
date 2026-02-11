@@ -1,0 +1,59 @@
+---
+source: crates/flux-syntax/tests/parser_tests.rs
+expression: result
+---
+Ok(
+    SourceFile {
+        items: [
+            Function(
+                Function {
+                    is_export: true,
+                    name: "plan",
+                    params: [
+                        Param {
+                            name: "ctx",
+                            ty: None,
+                            span: Span {
+                                start: 15,
+                                end: 18,
+                            },
+                        },
+                    ],
+                    return_type: Some(
+                        Named {
+                            name: "Project",
+                            span: Span {
+                                start: 23,
+                                end: 30,
+                            },
+                        },
+                    ),
+                    body: Block {
+                        stmts: [
+                            Var {
+                                name: "ctx",
+                                span: Span {
+                                    start: 33,
+                                    end: 36,
+                                },
+                            },
+                        ],
+                        span: Span {
+                            start: 31,
+                            end: 38,
+                        },
+                    },
+                    labels: [],
+                    span: Span {
+                        start: 7,
+                        end: 38,
+                    },
+                },
+            ),
+        ],
+        span: Span {
+            start: 0,
+            end: 38,
+        },
+    },
+)

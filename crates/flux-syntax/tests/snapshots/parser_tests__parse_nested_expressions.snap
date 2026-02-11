@@ -1,0 +1,84 @@
+---
+source: crates/flux-syntax/tests/parser_tests.rs
+expression: result
+---
+Ok(
+    SourceFile {
+        items: [
+            Function(
+                Function {
+                    is_export: false,
+                    name: "calc",
+                    params: [],
+                    return_type: None,
+                    body: Block {
+                        stmts: [
+                            Binary {
+                                op: Mul,
+                                left: Binary {
+                                    op: Add,
+                                    left: Int {
+                                        value: 1,
+                                        span: Span {
+                                            start: 13,
+                                            end: 14,
+                                        },
+                                    },
+                                    right: Int {
+                                        value: 2,
+                                        span: Span {
+                                            start: 17,
+                                            end: 18,
+                                        },
+                                    },
+                                    span: Span {
+                                        start: 13,
+                                        end: 18,
+                                    },
+                                },
+                                right: Binary {
+                                    op: Add,
+                                    left: Int {
+                                        value: 3,
+                                        span: Span {
+                                            start: 23,
+                                            end: 24,
+                                        },
+                                    },
+                                    right: Int {
+                                        value: 4,
+                                        span: Span {
+                                            start: 27,
+                                            end: 28,
+                                        },
+                                    },
+                                    span: Span {
+                                        start: 23,
+                                        end: 28,
+                                    },
+                                },
+                                span: Span {
+                                    start: 13,
+                                    end: 28,
+                                },
+                            },
+                        ],
+                        span: Span {
+                            start: 10,
+                            end: 31,
+                        },
+                    },
+                    labels: [],
+                    span: Span {
+                        start: 0,
+                        end: 31,
+                    },
+                },
+            ),
+        ],
+        span: Span {
+            start: 0,
+            end: 31,
+        },
+    },
+)

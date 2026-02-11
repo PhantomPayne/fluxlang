@@ -1,0 +1,77 @@
+---
+source: crates/flux-syntax/tests/parser_tests.rs
+expression: result
+---
+Ok(
+    SourceFile {
+        items: [
+            Function(
+                Function {
+                    is_export: false,
+                    name: "process",
+                    params: [
+                        Param {
+                            name: "data",
+                            ty: Some(
+                                Table {
+                                    element: Int(
+                                        Span {
+                                            start: 23,
+                                            end: 26,
+                                        },
+                                    ),
+                                    span: Span {
+                                        start: 17,
+                                        end: 27,
+                                    },
+                                },
+                            ),
+                            span: Span {
+                                start: 11,
+                                end: 27,
+                            },
+                        },
+                    ],
+                    return_type: Some(
+                        Table {
+                            element: String(
+                                Span {
+                                    start: 38,
+                                    end: 44,
+                                },
+                            ),
+                            span: Span {
+                                start: 32,
+                                end: 45,
+                            },
+                        },
+                    ),
+                    body: Block {
+                        stmts: [
+                            Var {
+                                name: "data",
+                                span: Span {
+                                    start: 48,
+                                    end: 52,
+                                },
+                            },
+                        ],
+                        span: Span {
+                            start: 46,
+                            end: 54,
+                        },
+                    },
+                    labels: [],
+                    span: Span {
+                        start: 0,
+                        end: 54,
+                    },
+                },
+            ),
+        ],
+        span: Span {
+            start: 0,
+            end: 54,
+        },
+    },
+)
