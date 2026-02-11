@@ -104,3 +104,43 @@ fn test_wasm_execution_complex_expression() {
 
     assert_eq!(result, 42);
 }
+
+#[test]
+fn test_wasm_execution_bool_true() {
+    let source = "fn main() { true }";
+    let wasm_bytes = compile_to_wasm(source).expect("Compilation failed");
+
+    let engine = Engine::default();
+    let module = Module::new(&engine, &wasm_bytes).expect("Failed to create module");
+
+    let mut store = Store::new(&engine, ());
+    let instance = Instance::new(&mut store, &module, &[]).expect("Failed to create instance");
+
+    let main = instance
+        .get_typed_func::<(), i32>(&mut store, "main")
+        .expect("Failed to get main function");
+
+    let result = main.call(&mut store, ()).expect("Function call failed");
+
+    assert_eq!(result, 1);
+}
+
+#[test]
+fn test_wasm_execution_bool_false() {
+    let source = "fn main() { false }";
+    let wasm_bytes = compile_to_wasm(source).expect("Compilation failed");
+
+    let engine = Engine::default();
+    let module = Module::new(&engine, &wasm_bytes).expect("Failed to create module");
+
+    let mut store = Store::new(&engine, ());
+    let instance = Instance::new(&mut store, &module, &[]).expect("Failed to create instance");
+
+    let main = instance
+        .get_typed_func::<(), i32>(&mut store, "main")
+        .expect("Failed to get main function");
+
+    let result = main.call(&mut store, ()).expect("Function call failed");
+
+    assert_eq!(result, 0);
+}

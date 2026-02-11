@@ -22,8 +22,8 @@ fn test_parse_label_literals() {
 }
 
 #[test]
-fn test_parse_table_type() {
-    let input = r#"fn process(data: Table<int>) -> Table<string> { data }"#;
+fn test_parse_bool_float_types() {
+    let input = r#"fn process(flag: bool, value: float) -> int { 42 }"#;
     let result = parse(input);
     insta::assert_debug_snapshot!(result);
 }
@@ -37,7 +37,7 @@ fn test_parse_plan_skeleton() {
 
 #[test]
 fn test_parse_import_statement() {
-    let input = r#"import { Table } from "std""#;
+    let input = r#"import { Date, Time } from "std""#;
     let result = parse(input);
     insta::assert_debug_snapshot!(result);
 }
@@ -45,8 +45,8 @@ fn test_parse_import_statement() {
 #[test]
 fn test_parse_complex_pipeline() {
     let input = r#"
-fn analyze(data: Table<int>) -> int {
-    data |> filter(#active) |> sum
+fn analyze(value: int) -> int {
+    value |> filter(#active) |> sum
 }
 "#;
     let result = parse(input);
@@ -56,6 +56,48 @@ fn analyze(data: Table<int>) -> int {
 #[test]
 fn test_parse_nested_expressions() {
     let input = r#"fn calc() { (1 + 2) * (3 + 4) }"#;
+    let result = parse(input);
+    insta::assert_debug_snapshot!(result);
+}
+
+#[test]
+fn test_parse_temporal_types_date() {
+    let input = r#"fn get_birth_date() -> Date { 0 }"#;
+    let result = parse(input);
+    insta::assert_debug_snapshot!(result);
+}
+
+#[test]
+fn test_parse_temporal_types_time() {
+    let input = r#"fn get_meeting_time() -> Time { 0 }"#;
+    let result = parse(input);
+    insta::assert_debug_snapshot!(result);
+}
+
+#[test]
+fn test_parse_temporal_types_datetime() {
+    let input = r#"fn schedule_event(local_time: DateTime) -> DateTime { local_time }"#;
+    let result = parse(input);
+    insta::assert_debug_snapshot!(result);
+}
+
+#[test]
+fn test_parse_temporal_types_timestamp() {
+    let input = r#"fn log_event() -> Timestamp { 0 }"#;
+    let result = parse(input);
+    insta::assert_debug_snapshot!(result);
+}
+
+#[test]
+fn test_parse_temporal_types_duration() {
+    let input = r#"fn calculate_elapsed(start: Timestamp, end: Timestamp) -> Duration { 0 }"#;
+    let result = parse(input);
+    insta::assert_debug_snapshot!(result);
+}
+
+#[test]
+fn test_parse_bool_float_literals() {
+    let input = r#"fn test() { true } fn test2() { false } fn test3() { 3.14 }"#;
     let result = parse(input);
     insta::assert_debug_snapshot!(result);
 }

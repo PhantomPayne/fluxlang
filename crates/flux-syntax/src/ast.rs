@@ -56,15 +56,27 @@ pub struct Import {
 pub enum Type {
     Int(Span),
     String(Span),
-    Table { element: Box<Type>, span: Span },
+    Bool(Span),
+    Float(Span),
     Named { name: String, span: Span },
+    // Temporal types
+    Date(Span),
+    Time(Span),
+    DateTime(Span),
+    Timestamp(Span),
+    Duration(Span),
 }
 
 impl Type {
     pub fn span(&self) -> Span {
         match self {
-            Type::Int(s) | Type::String(s) => *s,
-            Type::Table { span, .. } | Type::Named { span, .. } => *span,
+            Type::Int(s) | Type::String(s) | Type::Bool(s) | Type::Float(s) => *s,
+            Type::Date(s)
+            | Type::Time(s)
+            | Type::DateTime(s)
+            | Type::Timestamp(s)
+            | Type::Duration(s) => *s,
+            Type::Named { span, .. } => *span,
         }
     }
 }
@@ -75,6 +87,14 @@ pub enum Expr {
     // Literals
     Int {
         value: i64,
+        span: Span,
+    },
+    Float {
+        value: f64,
+        span: Span,
+    },
+    Bool {
+        value: bool,
         span: Span,
     },
     String {
@@ -141,6 +161,8 @@ impl Expr {
     pub fn span(&self) -> Span {
         match self {
             Expr::Int { span, .. }
+            | Expr::Float { span, .. }
+            | Expr::Bool { span, .. }
             | Expr::String { span, .. }
             | Expr::Label { span, .. }
             | Expr::Var { span, .. }

@@ -1,0 +1,49 @@
+---
+source: crates/flux-syntax/tests/parser_tests.rs
+expression: result
+---
+Ok(
+    SourceFile {
+        items: [
+            Function(
+                Function {
+                    is_export: false,
+                    name: "log_event",
+                    params: [],
+                    return_type: Some(
+                        Timestamp(
+                            Span {
+                                start: 18,
+                                end: 27,
+                            },
+                        ),
+                    ),
+                    body: Block {
+                        stmts: [
+                            Int {
+                                value: 0,
+                                span: Span {
+                                    start: 30,
+                                    end: 31,
+                                },
+                            },
+                        ],
+                        span: Span {
+                            start: 28,
+                            end: 33,
+                        },
+                    },
+                    labels: [],
+                    span: Span {
+                        start: 0,
+                        end: 33,
+                    },
+                },
+            ),
+        ],
+        span: Span {
+            start: 0,
+            end: 33,
+        },
+    },
+)

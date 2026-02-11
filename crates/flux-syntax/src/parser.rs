@@ -203,16 +203,33 @@ impl Parser {
                 self.advance();
                 Ok(Type::String(token.span))
             }
-            TokenKind::TyTable => {
-                let start = token.span.start;
+            TokenKind::TyBool => {
                 self.advance();
-                self.expect(TokenKind::OpLt)?;
-                let element = Box::new(self.parse_type()?);
-                let end_token = self.expect(TokenKind::OpGt)?;
-                Ok(Type::Table {
-                    element,
-                    span: Span::new(start, end_token.span.end),
-                })
+                Ok(Type::Bool(token.span))
+            }
+            TokenKind::TyFloat => {
+                self.advance();
+                Ok(Type::Float(token.span))
+            }
+            TokenKind::TyDate => {
+                self.advance();
+                Ok(Type::Date(token.span))
+            }
+            TokenKind::TyTime => {
+                self.advance();
+                Ok(Type::Time(token.span))
+            }
+            TokenKind::TyDateTime => {
+                self.advance();
+                Ok(Type::DateTime(token.span))
+            }
+            TokenKind::TyTimestamp => {
+                self.advance();
+                Ok(Type::Timestamp(token.span))
+            }
+            TokenKind::TyDuration => {
+                self.advance();
+                Ok(Type::Duration(token.span))
             }
             TokenKind::Ident | TokenKind::TyProject => {
                 let name = token.text.clone();
@@ -421,6 +438,28 @@ impl Parser {
                     span: token.span,
                 })
             }
+            TokenKind::LitFloat => {
+                self.advance();
+                let value = token.text.parse().unwrap_or(0.0);
+                Ok(Expr::Float {
+                    value,
+                    span: token.span,
+                })
+            }
+            TokenKind::LitTrue => {
+                self.advance();
+                Ok(Expr::Bool {
+                    value: true,
+                    span: token.span,
+                })
+            }
+            TokenKind::LitFalse => {
+                self.advance();
+                Ok(Expr::Bool {
+                    value: false,
+                    span: token.span,
+                })
+            }
             TokenKind::LitString => {
                 self.advance();
                 let value = token.text.trim_matches('"').to_string();
@@ -508,8 +547,8 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_table_type() {
-        let input = "fn test(data: Table<int>) { data }";
+    fn test_parse_bool_float_types() {
+        let input = "fn test(flag: bool, value: float) -> int { 42 }";
         let result = parse(input);
         assert!(result.is_ok());
     }

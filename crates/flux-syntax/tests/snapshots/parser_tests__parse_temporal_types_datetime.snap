@@ -1,0 +1,65 @@
+---
+source: crates/flux-syntax/tests/parser_tests.rs
+expression: result
+---
+Ok(
+    SourceFile {
+        items: [
+            Function(
+                Function {
+                    is_export: false,
+                    name: "schedule_event",
+                    params: [
+                        Param {
+                            name: "local_time",
+                            ty: Some(
+                                DateTime(
+                                    Span {
+                                        start: 30,
+                                        end: 38,
+                                    },
+                                ),
+                            ),
+                            span: Span {
+                                start: 18,
+                                end: 38,
+                            },
+                        },
+                    ],
+                    return_type: Some(
+                        DateTime(
+                            Span {
+                                start: 43,
+                                end: 51,
+                            },
+                        ),
+                    ),
+                    body: Block {
+                        stmts: [
+                            Var {
+                                name: "local_time",
+                                span: Span {
+                                    start: 54,
+                                    end: 64,
+                                },
+                            },
+                        ],
+                        span: Span {
+                            start: 52,
+                            end: 66,
+                        },
+                    },
+                    labels: [],
+                    span: Span {
+                        start: 0,
+                        end: 66,
+                    },
+                },
+            ),
+        ],
+        span: Span {
+            start: 0,
+            end: 66,
+        },
+    },
+)
