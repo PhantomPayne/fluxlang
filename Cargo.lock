@@ -536,7 +536,6 @@ version = "0.1.0"
 dependencies = [
  "miette",
  "thiserror 1.0.69",
- "tower-lsp",
 ]
 
 [[package]]
@@ -547,6 +546,7 @@ dependencies = [
  "flux-errors",
  "flux-sema",
  "flux-syntax",
+ "miette",
  "serde",
  "serde_json",
  "tokio",
