@@ -1,4 +1,3 @@
-use flux_errors::Span;
 use std::fmt;
 
 /// Type information for Flux types
@@ -6,9 +5,16 @@ use std::fmt;
 pub enum TypeInfo {
     Int,
     String,
-    Table { element: Box<TypeInfo> },
-    Named { name: String },
-    Function { params: Vec<TypeInfo>, ret: Box<TypeInfo> },
+    Table {
+        element: Box<TypeInfo>,
+    },
+    Named {
+        name: String,
+    },
+    Function {
+        params: Vec<TypeInfo>,
+        ret: Box<TypeInfo>,
+    },
     Unknown,
 }
 

@@ -6,8 +6,7 @@ use wasm_encoder::{
 };
 
 /// WASM code generator for Flux
-pub struct WasmCodegen {
-}
+pub struct WasmCodegen {}
 
 impl WasmCodegen {
     pub fn new() -> Self {
@@ -17,7 +16,7 @@ impl WasmCodegen {
     /// Compile a Flux source file to WASM
     pub fn compile(&mut self, ast: &SourceFile) -> Result<Vec<u8>> {
         let mut module = Module::new();
-        
+
         // Create type section
         let mut types = TypeSection::new();
         // Function type: () -> i32
@@ -58,7 +57,9 @@ impl WasmCodegen {
             Expr::Int { value, .. } => {
                 func.instruction(&Instruction::I32Const(*value as i32));
             }
-            Expr::Binary { op, left, right, .. } => {
+            Expr::Binary {
+                op, left, right, ..
+            } => {
                 self.compile_expr(left, func)?;
                 self.compile_expr(right, func)?;
                 match op {

@@ -1,9 +1,9 @@
-pub mod vfs;
-pub mod types;
-pub mod symbol;
 pub mod checker;
+pub mod symbol;
+pub mod types;
+pub mod vfs;
 
-pub use vfs::*;
-pub use types::*;
-pub use symbol::*;
 pub use checker::check_semantics;
+pub use symbol::*;
+pub use types::*;
+pub use vfs::*;

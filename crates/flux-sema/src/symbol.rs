@@ -34,10 +34,7 @@ impl SymbolTable {
     }
 
     pub fn insert(&self, file_id: FileId, symbol: Symbol) {
-        self.symbols
-            .entry(file_id)
-            .or_insert_with(Vec::new)
-            .push(symbol);
+        self.symbols.entry(file_id).or_default().push(symbol);
     }
 
     pub fn get_symbols(&self, file_id: FileId) -> Vec<Symbol> {
@@ -50,9 +47,9 @@ impl SymbolTable {
     /// Find symbol at a specific position (for hover/go-to-definition)
     pub fn find_symbol_at_position(&self, file_id: FileId, offset: usize) -> Option<Symbol> {
         let symbols = self.get_symbols(file_id);
-        symbols.into_iter().find(|sym| {
-            sym.span.start <= offset && offset <= sym.span.end
-        })
+        symbols
+            .into_iter()
+            .find(|sym| sym.span.start <= offset && offset <= sym.span.end)
     }
 
     pub fn clear(&self, file_id: FileId) {
@@ -117,9 +114,7 @@ impl SymbolBridge {
             flux_syntax::Type::Table { element, .. } => TypeInfo::Table {
                 element: Box::new(self.type_from_ast(element)),
             },
-            flux_syntax::Type::Named { name, .. } => TypeInfo::Named {
-                name: name.clone(),
-            },
+            flux_syntax::Type::Named { name, .. } => TypeInfo::Named { name: name.clone() },
         }
     }
 

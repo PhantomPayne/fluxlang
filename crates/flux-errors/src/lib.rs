@@ -1,3 +1,6 @@
+// thiserror derive generates code that triggers unused_assignments lint
+#![allow(unused_assignments)]
+
 use miette::{Diagnostic, SourceSpan};
 use thiserror::Error;
 
@@ -56,6 +59,6 @@ impl Span {
     }
 
     pub fn to_source_span(&self) -> SourceSpan {
-        SourceSpan::new(self.start.into(), (self.end - self.start).into())
+        SourceSpan::new(self.start.into(), self.end - self.start)
     }
 }

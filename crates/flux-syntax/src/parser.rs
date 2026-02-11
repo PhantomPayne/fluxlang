@@ -16,9 +16,12 @@ impl Parser {
     }
 
     fn current(&self) -> &Token {
-        self.tokens.get(self.pos).unwrap_or(&self.tokens[self.tokens.len() - 1])
+        self.tokens
+            .get(self.pos)
+            .unwrap_or(&self.tokens[self.tokens.len() - 1])
     }
 
+    #[allow(dead_code)]
     fn peek(&self, offset: usize) -> &Token {
         self.tokens
             .get(self.pos + offset)
@@ -146,7 +149,10 @@ impl Parser {
             None
         };
 
-        let end = ty.as_ref().map(|t| t.span().end).unwrap_or(name_token.span.end);
+        let end = ty
+            .as_ref()
+            .map(|t| t.span().end)
+            .unwrap_or(name_token.span.end);
 
         Ok(Param {
             name,
@@ -329,10 +335,7 @@ impl Parser {
     fn parse_additive(&mut self) -> Result<Expr> {
         let mut left = self.parse_multiplicative()?;
 
-        while matches!(
-            self.current().kind,
-            TokenKind::OpPlus | TokenKind::OpMinus
-        ) {
+        while matches!(self.current().kind, TokenKind::OpPlus | TokenKind::OpMinus) {
             let start = left.span().start;
             let op = match self.current().kind {
                 TokenKind::OpPlus => BinOp::Add,
