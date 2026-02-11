@@ -99,9 +99,6 @@ impl SymbolBridge {
                         },
                     );
                 }
-                flux_syntax::Item::Import(_) => {
-                    // Handle imports
-                }
             }
         }
     }
@@ -113,11 +110,6 @@ impl SymbolBridge {
             flux_syntax::Type::String(_) => TypeInfo::String,
             flux_syntax::Type::Bool(_) => TypeInfo::Bool,
             flux_syntax::Type::Float(_) => TypeInfo::Float,
-            flux_syntax::Type::Date(_) => TypeInfo::Date,
-            flux_syntax::Type::Time(_) => TypeInfo::Time,
-            flux_syntax::Type::DateTime(_) => TypeInfo::DateTime,
-            flux_syntax::Type::Timestamp(_) => TypeInfo::Timestamp,
-            flux_syntax::Type::Duration(_) => TypeInfo::Duration,
             flux_syntax::Type::Named { name, .. } => TypeInfo::Named { name: name.clone() },
         }
     }

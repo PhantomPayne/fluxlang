@@ -13,23 +13,28 @@ Ok(
                     return_type: None,
                     body: Block {
                         stmts: [
-                            Bool {
-                                value: true,
+                            Return {
+                                value: Bool {
+                                    value: true,
+                                    span: Span {
+                                        start: 19,
+                                        end: 23,
+                                    },
+                                },
                                 span: Span {
                                     start: 12,
-                                    end: 16,
+                                    end: 23,
                                 },
                             },
                         ],
                         span: Span {
                             start: 10,
-                            end: 18,
+                            end: 25,
                         },
                     },
-                    labels: [],
                     span: Span {
                         start: 0,
-                        end: 18,
+                        end: 25,
                     },
                 },
             ),
@@ -41,23 +46,28 @@ Ok(
                     return_type: None,
                     body: Block {
                         stmts: [
-                            Bool {
-                                value: false,
+                            Return {
+                                value: Bool {
+                                    value: false,
+                                    span: Span {
+                                        start: 46,
+                                        end: 51,
+                                    },
+                                },
                                 span: Span {
-                                    start: 32,
-                                    end: 37,
+                                    start: 39,
+                                    end: 51,
                                 },
                             },
                         ],
                         span: Span {
-                            start: 30,
-                            end: 39,
+                            start: 37,
+                            end: 53,
                         },
                     },
-                    labels: [],
                     span: Span {
-                        start: 19,
-                        end: 39,
+                        start: 26,
+                        end: 53,
                     },
                 },
             ),
@@ -69,30 +79,35 @@ Ok(
                     return_type: None,
                     body: Block {
                         stmts: [
-                            Float {
-                                value: 3.14,
+                            Return {
+                                value: Float {
+                                    value: 3.14,
+                                    span: Span {
+                                        start: 74,
+                                        end: 78,
+                                    },
+                                },
                                 span: Span {
-                                    start: 53,
-                                    end: 57,
+                                    start: 67,
+                                    end: 78,
                                 },
                             },
                         ],
                         span: Span {
-                            start: 51,
-                            end: 59,
+                            start: 65,
+                            end: 80,
                         },
                     },
-                    labels: [],
                     span: Span {
-                        start: 40,
-                        end: 59,
+                        start: 54,
+                        end: 80,
                     },
                 },
             ),
         ],
         span: Span {
             start: 0,
-            end: 59,
+            end: 80,
         },
     },
 )

@@ -32,38 +32,12 @@ pub struct FileData {
 
 impl Vfs {
     pub fn new() -> Self {
-        let vfs = Self {
+        Self {
             files: DashMap::new(),
             path_to_id: DashMap::new(),
             next_id: RwLock::new(1),
             std_lib: DashMap::new(),
-        };
-        vfs.init_std_lib();
-        vfs
-    }
-
-    fn init_std_lib(&self) {
-        // Embed standard library as virtual files
-        let std_core = r#"
-// Flux Standard Library - Core
-export fn filter(predicate) { /* native */ }
-export fn map(f) { /* native */ }
-export fn reduce(f, init) { /* native */ }
-export fn sum() { /* native */ }
-"#;
-
-        let file_id = FileId(0); // Reserve ID 0 for std/core
-        let file_data = Arc::new(FileData {
-            id: file_id,
-            path: PathBuf::from("std/core.flux"),
-            content: std_core.to_string(),
-            version: 1,
-        });
-
-        self.std_lib.insert("std".to_string(), file_data.clone());
-        self.std_lib
-            .insert("std/core".to_string(), file_data.clone());
-        self.files.insert(file_id, file_data);
+        }
     }
 
     fn next_id(&self) -> FileId {
@@ -184,15 +158,5 @@ mod tests {
         let file_data = vfs.get_file(file_id2).unwrap();
         assert_eq!(file_data.content, "version 2");
         assert_eq!(file_data.version, 2);
-    }
-
-    #[test]
-    fn test_vfs_resolve_std_module() {
-        let vfs = Vfs::new();
-        let std_id = vfs.resolve_module("std");
-        assert!(std_id.is_some());
-
-        let file_data = vfs.get_file(std_id.unwrap()).unwrap();
-        assert!(file_data.content.contains("filter"));
     }
 }
