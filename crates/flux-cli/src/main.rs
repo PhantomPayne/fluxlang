@@ -20,15 +20,16 @@ fn main() -> Result<()> {
         }
         "compile" => {
             if args.len() < 3 {
-                eprintln!("Usage: flux compile <file.flux> [output.wasm]");
+                eprintln!("Usage: flux compile <file.flux> [output.wasm] [--core]");
                 return Ok(());
             }
-            let output = if args.len() > 3 {
+            let output = if args.len() > 3 && !args[3].starts_with("--") {
                 &args[3]
             } else {
                 "output.wasm"
             };
-            compile_file(&args[2], output)?;
+            let use_core = args.contains(&"--core".to_string());
+            compile_file(&args[2], output, use_core)?;
         }
         "check" => {
             if args.len() < 3 {
@@ -61,7 +62,8 @@ Usage:
 
 Commands:
     parse <file.flux>              Parse and display AST
-    compile <file.flux> [out.wasm] Compile to WebAssembly
+    compile <file.flux> [out.wasm] Compile to WebAssembly Component
+            [--core]               Use --core for legacy core module format
     check <file.flux>              Check syntax without compilation
     --version, -v                  Show version
     --help, -h                     Show this help
@@ -69,6 +71,7 @@ Commands:
 Examples:
     flux parse examples/plan.flux
     flux compile examples/plan.flux output.wasm
+    flux compile examples/plan.flux output.wasm --core
     flux check examples/plan.flux
 "#
     );
@@ -91,13 +94,27 @@ fn parse_file(path: &str) -> Result<()> {
     }
 }
 
-fn compile_file(input_path: &str, output_path: &str) -> Result<()> {
+fn compile_file(input_path: &str, output_path: &str, use_core: bool) -> Result<()> {
     let content = fs::read_to_string(input_path).into_diagnostic()?;
 
-    match flux_wasm::compile_to_wasm(&content) {
+    let result = if use_core {
+        flux_wasm::compile_to_wasm(&content)
+    } else {
+        flux_wasm::compile_to_component(&content)
+    };
+
+    match result {
         Ok(wasm) => {
             fs::write(output_path, &wasm).into_diagnostic()?;
-            println!("✓ Successfully compiled {} to {}", input_path, output_path);
+            let format = if use_core {
+                "core module"
+            } else {
+                "component"
+            };
+            println!(
+                "✓ Successfully compiled {} to {} ({})",
+                input_path, output_path, format
+            );
             println!("  WASM size: {} bytes", wasm.len());
             Ok(())
         }
