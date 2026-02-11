@@ -34,10 +34,7 @@ impl SymbolTable {
     }
 
     pub fn insert(&self, file_id: FileId, symbol: Symbol) {
-        self.symbols
-            .entry(file_id)
-            .or_default()
-            .push(symbol);
+        self.symbols.entry(file_id).or_default().push(symbol);
     }
 
     pub fn get_symbols(&self, file_id: FileId) -> Vec<Symbol> {
