@@ -6,7 +6,7 @@ Flux is a functional, columnar-first language that targets WebAssembly (WASM).
 
 - **Pipeline Operator (`|>`)**: Chain operations in a readable, left-to-right flow
 - **Structural Labels (`#label`)**: Metadata and annotations on types and functions
-- **Strong Type System**: Built-in types including `int`, `string`, `Table<T>`, and comprehensive temporal types
+- **Strong Type System**: Built-in types including `int`, `float`, `bool`, `string`, and comprehensive temporal types
 - **Temporal Types**: First-class support for `Date`, `Time`, `DateTime`, `Timestamp`, and `Duration`
 - **WASM Target**: Compile directly to WebAssembly for portable execution
 - **LSP Support**: Full language server with hover, completion, and diagnostics
@@ -93,15 +93,26 @@ export fn plan(ctx) -> Project {
 ### Pipeline Operations
 
 ```flux
-fn process(data: Table<int>) -> int {
-    data |> filter(#active) |> sum
+fn process(value: int) -> int {
+    value |> filter(#active) |> sum
 }
 ```
 
 ### Imports
 
 ```flux
-import { Table, filter, map } from "std"
+import { Date, Time, filter, map } from "std"
+```
+
+### Basic Types
+
+```flux
+fn example_types() {
+    let x: int = 42
+    let y: float = 3.14
+    let flag: bool = true
+    let name: string = "Flux"
+}
 ```
 
 ### Labels
@@ -187,7 +198,7 @@ The VFS in `flux-sema` manages both disk-based files and in-memory "unsaved" buf
 
 ### Standard Library
 
-The standard library is embedded as virtual files in the compiler, allowing `import { Table } from "std"` to work even without physical files.
+The standard library is embedded as virtual files in the compiler, allowing imports like `import { Date, Time } from "std"` to work even without physical files.
 
 ### Symbol Bridge
 

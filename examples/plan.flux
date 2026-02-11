@@ -5,9 +5,19 @@ fn add(x: int, y: int) -> int {
     x + y
 }
 
+// Function with bool and float
+fn calculate(flag: bool, value: float) -> int {
+    42
+}
+
+// Temporal type example
+fn get_current_time() -> Timestamp {
+    0
+}
+
 // Pipeline operator example
-fn process(data: Table<int>) -> int {
-    data 
+fn process(value: int) -> int {
+    value 
     |> filter(#active) 
     |> map(double) 
     |> reduce(add, 0)
