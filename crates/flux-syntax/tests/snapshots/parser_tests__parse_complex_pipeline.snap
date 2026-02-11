@@ -1,0 +1,112 @@
+---
+source: crates/flux-syntax/tests/parser_tests.rs
+expression: result
+---
+Ok(
+    SourceFile {
+        items: [
+            Function(
+                Function {
+                    is_export: false,
+                    name: "analyze",
+                    params: [
+                        Param {
+                            name: "data",
+                            ty: Some(
+                                Table {
+                                    element: Int(
+                                        Span {
+                                            start: 21,
+                                            end: 24,
+                                        },
+                                    ),
+                                    span: Span {
+                                        start: 15,
+                                        end: 25,
+                                    },
+                                },
+                            ),
+                            span: Span {
+                                start: 10,
+                                end: 25,
+                            },
+                        },
+                    ],
+                    return_type: Some(
+                        Int(
+                            Span {
+                                start: 28,
+                                end: 31,
+                            },
+                        ),
+                    ),
+                    body: Block {
+                        stmts: [
+                            Pipeline {
+                                left: Pipeline {
+                                    left: Var {
+                                        name: "data",
+                                        span: Span {
+                                            start: 32,
+                                            end: 36,
+                                        },
+                                    },
+                                    right: Call {
+                                        func: Var {
+                                            name: "filter",
+                                            span: Span {
+                                                start: 38,
+                                                end: 44,
+                                            },
+                                        },
+                                        args: [
+                                            Label {
+                                                name: "#active",
+                                                span: Span {
+                                                    start: 45,
+                                                    end: 52,
+                                                },
+                                            },
+                                        ],
+                                        span: Span {
+                                            start: 38,
+                                            end: 53,
+                                        },
+                                    },
+                                    span: Span {
+                                        start: 32,
+                                        end: 53,
+                                    },
+                                },
+                                right: Var {
+                                    name: "sum",
+                                    span: Span {
+                                        start: 55,
+                                        end: 58,
+                                    },
+                                },
+                                span: Span {
+                                    start: 32,
+                                    end: 58,
+                                },
+                            },
+                        ],
+                        span: Span {
+                            start: 31,
+                            end: 59,
+                        },
+                    },
+                    labels: [],
+                    span: Span {
+                        start: 0,
+                        end: 59,
+                    },
+                },
+            ),
+        ],
+        span: Span {
+            start: 0,
+            end: 59,
+        },
+    },
+)

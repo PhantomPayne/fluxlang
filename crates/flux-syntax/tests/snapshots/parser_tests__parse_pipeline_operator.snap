@@ -1,0 +1,90 @@
+---
+source: crates/flux-syntax/tests/parser_tests.rs
+expression: result
+---
+Ok(
+    SourceFile {
+        items: [
+            Function(
+                Function {
+                    is_export: false,
+                    name: "process",
+                    params: [
+                        Param {
+                            name: "data",
+                            ty: None,
+                            span: Span {
+                                start: 10,
+                                end: 14,
+                            },
+                        },
+                    ],
+                    return_type: None,
+                    body: Block {
+                        stmts: [
+                            Pipeline {
+                                left: Pipeline {
+                                    left: Pipeline {
+                                        left: Var {
+                                            name: "data",
+                                            span: Span {
+                                                start: 16,
+                                                end: 20,
+                                            },
+                                        },
+                                        right: Var {
+                                            name: "filter",
+                                            span: Span {
+                                                start: 22,
+                                                end: 28,
+                                            },
+                                        },
+                                        span: Span {
+                                            start: 16,
+                                            end: 28,
+                                        },
+                                    },
+                                    right: Var {
+                                        name: "map",
+                                        span: Span {
+                                            start: 30,
+                                            end: 33,
+                                        },
+                                    },
+                                    span: Span {
+                                        start: 16,
+                                        end: 33,
+                                    },
+                                },
+                                right: Var {
+                                    name: "reduce",
+                                    span: Span {
+                                        start: 35,
+                                        end: 41,
+                                    },
+                                },
+                                span: Span {
+                                    start: 16,
+                                    end: 41,
+                                },
+                            },
+                        ],
+                        span: Span {
+                            start: 15,
+                            end: 42,
+                        },
+                    },
+                    labels: [],
+                    span: Span {
+                        start: 0,
+                        end: 42,
+                    },
+                },
+            ),
+        ],
+        span: Span {
+            start: 0,
+            end: 42,
+        },
+    },
+)
