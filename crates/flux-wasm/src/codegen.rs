@@ -1,9 +1,10 @@
 use flux_errors::{FluxError, Result};
-use flux_syntax::{Expr, SourceFile};
+use flux_syntax::{Expr, SourceFile, Type};
 use wasm_encoder::{
     CodeSection, ExportKind, ExportSection, Function, FunctionSection, Instruction, Module,
     TypeSection, ValType,
 };
+use wit_component::ComponentEncoder;
 
 /// WASM code generator for Flux
 pub struct WasmCodegen {}
@@ -13,7 +14,7 @@ impl WasmCodegen {
         Self {}
     }
 
-    /// Compile a Flux source file to WASM
+    /// Compile a Flux source file to WASM core module
     pub fn compile(&mut self, ast: &SourceFile) -> Result<Vec<u8>> {
         let mut module = Module::new();
 
@@ -50,6 +51,44 @@ impl WasmCodegen {
         module.section(&codes);
 
         Ok(module.finish())
+    }
+
+    /// Compile a Flux source file to a WASM component
+    pub fn compile_component(&mut self, ast: &SourceFile) -> Result<Vec<u8>> {
+        // First generate the core module
+        let core_wasm = self.compile(ast)?;
+
+        // Create a component encoder
+        let encoder = ComponentEncoder::default()
+            .module(&core_wasm)
+            .map_err(|e| FluxError::WasmError {
+                message: format!("Failed to encode component: {}", e),
+            })?
+            .validate(true)
+            .encode()
+            .map_err(|e| FluxError::WasmError {
+                message: format!("Failed to finalize component: {}", e),
+            })?;
+
+        Ok(encoder)
+    }
+
+    /// Map a Flux type to the corresponding WIT type representation
+    /// This is a helper for future WIT integration
+    #[allow(dead_code)]
+    fn flux_type_to_wit_name(&self, ty: &Type) -> &'static str {
+        match ty {
+            Type::Int(_) => "s64",
+            Type::Float(_) => "f64",
+            Type::Bool(_) => "bool",
+            Type::String(_) => "string",
+            Type::Date(_) => "date",
+            Type::Time(_) => "time",
+            Type::DateTime(_) => "datetime",
+            Type::Timestamp(_) => "timestamp",
+            Type::Duration(_) => "duration",
+            Type::Named { .. } => "named",
+        }
     }
 
     fn compile_expr(&mut self, expr: &Expr, func: &mut Function) -> Result<()> {
@@ -119,6 +158,13 @@ pub fn compile_to_wasm(source: &str) -> Result<Vec<u8>> {
     let ast = flux_syntax::parse(source)?;
     let mut codegen = WasmCodegen::new();
     codegen.compile(&ast)
+}
+
+/// Helper function to compile Flux source to a WASM component
+pub fn compile_to_component(source: &str) -> Result<Vec<u8>> {
+    let ast = flux_syntax::parse(source)?;
+    let mut codegen = WasmCodegen::new();
+    codegen.compile_component(&ast)
 }
 
 #[cfg(test)]
