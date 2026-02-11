@@ -103,3 +103,103 @@ fn test_component_compilation_with_operations() {
     let engine = Engine::default();
     Component::from_binary(&engine, &component_bytes).expect("Failed to create component");
 }
+
+#[test]
+fn test_function_call_simple() {
+    // Test calling a function from main
+    let source = r#"
+        fn add(x: int, y: int) -> int {
+            return x + y
+        }
+
+        fn main() -> int {
+            return add(10, 32)
+        }
+    "#;
+    let wasm_bytes = compile_to_component(source).expect("Compilation failed");
+
+    let engine = Engine::default();
+    Component::from_binary(&engine, &wasm_bytes).expect("Failed to create component");
+}
+
+#[test]
+fn test_function_call_chain() {
+    // Test chaining function calls
+    let source = r#"
+        fn double(x: int) -> int {
+            return x + x
+        }
+
+        fn quadruple(x: int) -> int {
+            return double(double(x))
+        }
+
+        fn main() -> int {
+            return quadruple(5)
+        }
+    "#;
+    let wasm_bytes = compile_to_component(source).expect("Compilation failed");
+
+    let engine = Engine::default();
+    Component::from_binary(&engine, &wasm_bytes).expect("Failed to create component");
+}
+
+#[test]
+fn test_multiple_functions() {
+    // Test multiple function definitions
+    let source = r#"
+        fn add(x: int, y: int) -> int {
+            return x + y
+        }
+
+        fn multiply(x: int, y: int) -> int {
+            return x * y
+        }
+
+        fn main() -> int {
+            return add(multiply(2, 3), multiply(4, 5))
+        }
+    "#;
+    let wasm_bytes = compile_to_component(source).expect("Compilation failed");
+
+    let engine = Engine::default();
+    Component::from_binary(&engine, &wasm_bytes).expect("Failed to create component");
+}
+
+#[test]
+fn test_function_with_parameter() {
+    // Test function with parameter
+    let source = r#"
+        fn identity(n: int) -> int {
+            return n
+        }
+
+        fn main() -> int {
+            return identity(5)
+        }
+    "#;
+    let wasm_bytes = compile_to_component(source).expect("Compilation failed");
+
+    let engine = Engine::default();
+    Component::from_binary(&engine, &wasm_bytes).expect("Failed to create component");
+}
+
+#[test]
+fn test_let_binding_example() {
+    // Test the example from examples/let_binding.flux
+    let source = r#"
+        fn calculate() -> int {
+            let x = 10
+            let y = 32
+            return x + y
+        }
+
+        fn main() -> int {
+            return calculate()
+        }
+    "#;
+    let wasm_bytes = compile_to_component(source).expect("Compilation failed");
+
+    let engine = Engine::default();
+    Component::from_binary(&engine, &wasm_bytes).expect("Failed to create component");
+}

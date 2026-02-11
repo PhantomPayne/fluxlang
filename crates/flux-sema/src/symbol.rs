@@ -82,10 +82,29 @@ impl SymbolBridge {
         for item in &ast.items {
             match item {
                 flux_syntax::Item::Function(func) => {
-                    let ty = if let Some(ret_ty) = &func.return_type {
+                    // Build parameter types
+                    let params: Vec<TypeInfo> = func
+                        .params
+                        .iter()
+                        .map(|param| {
+                            param
+                                .ty
+                                .as_ref()
+                                .map_or(TypeInfo::Unknown, |ty| self.type_from_ast(ty))
+                        })
+                        .collect();
+
+                    // Get return type
+                    let ret = if let Some(ret_ty) = &func.return_type {
                         self.type_from_ast(ret_ty)
                     } else {
                         TypeInfo::Unknown
+                    };
+
+                    // Create function type
+                    let ty = TypeInfo::Function {
+                        params,
+                        ret: Box::new(ret),
                     };
 
                     self.symbol_table.insert(

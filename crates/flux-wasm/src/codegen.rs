@@ -53,6 +53,11 @@ impl WasmCodegen {
         Self {}
     }
 
+    /// Generate a unique key for a function type signature
+    fn type_signature_key(param_types: &[ValType], return_type: ValType) -> String {
+        format!("{:?}->{:?}", param_types, return_type)
+    }
+
     /// Compile a Flux source file to a WASM component
     pub fn compile_component(&mut self, ast: &SourceFile) -> Result<Vec<u8>> {
         // Generate the core module
@@ -77,57 +82,131 @@ impl WasmCodegen {
     fn compile_core_module(&mut self, ast: &SourceFile) -> Result<Vec<u8>> {
         let mut module = Module::new();
 
-        // Create type section
+        // Build function index map
+        let mut func_index_map = HashMap::new();
+        #[allow(irrefutable_let_patterns)]
+        for (idx, item) in ast.items.iter().enumerate() {
+            if let flux_syntax::Item::Function(func) = item {
+                func_index_map.insert(func.name.clone(), idx as u32);
+            }
+        }
+
+        // Create type section - register type signatures for all functions
         let mut types = TypeSection::new();
-        // Function type: () -> i32
-        types.ty().function(vec![], vec![ValType::I32]);
+        let mut type_index_map: HashMap<String, u32> = HashMap::new();
+
+        #[allow(irrefutable_let_patterns)]
+        for item in &ast.items {
+            if let flux_syntax::Item::Function(func) = item {
+                let param_types: Vec<ValType> = func
+                    .params
+                    .iter()
+                    .map(|param| {
+                        param
+                            .ty
+                            .as_ref()
+                            .map_or(ValType::I32, |ty| self.flux_type_to_valtype(ty))
+                    })
+                    .collect();
+
+                let return_type = func
+                    .return_type
+                    .as_ref()
+                    .map_or(ValType::I32, |ty| self.flux_type_to_valtype(ty));
+
+                // Check if we already have this type signature
+                let type_key = Self::type_signature_key(&param_types, return_type);
+                type_index_map.entry(type_key).or_insert_with(|| {
+                    let idx = types.len();
+                    types.ty().function(param_types.clone(), vec![return_type]);
+                    idx
+                });
+            }
+        }
         module.section(&types);
 
-        // Create function section
+        // Create function section - register all functions
         let mut functions = FunctionSection::new();
-        functions.function(0); // Function 0 uses type 0
+        #[allow(irrefutable_let_patterns)]
+        for item in &ast.items {
+            if let flux_syntax::Item::Function(func) = item {
+                let param_types: Vec<ValType> = func
+                    .params
+                    .iter()
+                    .map(|param| {
+                        param
+                            .ty
+                            .as_ref()
+                            .map_or(ValType::I32, |ty| self.flux_type_to_valtype(ty))
+                    })
+                    .collect();
+
+                let return_type = func
+                    .return_type
+                    .as_ref()
+                    .map_or(ValType::I32, |ty| self.flux_type_to_valtype(ty));
+
+                let type_key = Self::type_signature_key(&param_types, return_type);
+                let type_idx = type_index_map[&type_key];
+                functions.function(type_idx);
+            }
+        }
         module.section(&functions);
 
-        // Create export section
+        // Create export section - export main function if it exists
         let mut exports = ExportSection::new();
-        exports.export("main", ExportKind::Func, 0);
+        if let Some(&main_idx) = func_index_map.get("main") {
+            exports.export("main", ExportKind::Func, main_idx);
+        }
         module.section(&exports);
 
-        // Create code section
+        // Create code section - compile all functions
         let mut codes = CodeSection::new();
 
-        // Generate code for the first function's body
-        if let Some(flux_syntax::Item::Function(first_func)) = ast.items.first() {
-            let mut locals_ctx = LocalContext::new();
+        #[allow(irrefutable_let_patterns)]
+        for item in &ast.items {
+            if let flux_syntax::Item::Function(func_def) = item {
+                let mut locals_ctx = LocalContext::new();
 
-            // Add parameters as locals
-            for param in &first_func.params {
-                locals_ctx.add_param(&param.name);
+                // Add parameters as locals
+                for param in &func_def.params {
+                    locals_ctx.add_param(&param.name);
+                }
+
+                // Count additional locals needed for let bindings
+                let additional_locals = self.count_let_bindings(&func_def.body);
+
+                let func_locals = if additional_locals > 0 {
+                    vec![(additional_locals, ValType::I32)]
+                } else {
+                    vec![]
+                };
+
+                let mut func = Function::new(func_locals);
+                self.compile_expr_with_locals(
+                    &func_def.body,
+                    &mut locals_ctx,
+                    &mut func,
+                    &func_index_map,
+                )?;
+                func.instruction(&Instruction::End);
+                codes.function(&func);
             }
-
-            // Count additional locals needed for let bindings
-            let additional_locals = self.count_let_bindings(&first_func.body);
-
-            let func_locals = if additional_locals > 0 {
-                vec![(additional_locals, ValType::I32)]
-            } else {
-                vec![]
-            };
-
-            let mut func = Function::new(func_locals);
-            self.compile_expr_with_locals(&first_func.body, &mut locals_ctx, &mut func)?;
-            func.instruction(&Instruction::End);
-            codes.function(&func);
-        } else {
-            // Default: return 42
-            let mut func = Function::new(vec![]);
-            func.instruction(&Instruction::I32Const(42));
-            func.instruction(&Instruction::End);
-            codes.function(&func);
         }
 
         module.section(&codes);
         Ok(module.finish())
+    }
+
+    /// Convert Flux type to WASM ValType
+    fn flux_type_to_valtype(&self, ty: &Type) -> ValType {
+        match ty {
+            Type::Int(_) => ValType::I32,
+            Type::Float(_) => ValType::F64,
+            Type::Bool(_) => ValType::I32,
+            // String and named types default to I32 for now
+            Type::String(_) | Type::Named { .. } => ValType::I32,
+        }
     }
 
     /// Count let bindings to determine how many locals we need
@@ -158,6 +237,7 @@ impl WasmCodegen {
         expr: &Expr,
         locals: &mut LocalContext,
         func: &mut Function,
+        func_index_map: &HashMap<String, u32>,
     ) -> Result<()> {
         match expr {
             Expr::Int { value, .. } => {
@@ -182,8 +262,8 @@ impl WasmCodegen {
             Expr::Binary {
                 op, left, right, ..
             } => {
-                self.compile_expr_with_locals(left, locals, func)?;
-                self.compile_expr_with_locals(right, locals, func)?;
+                self.compile_expr_with_locals(left, locals, func, func_index_map)?;
+                self.compile_expr_with_locals(right, locals, func, func_index_map)?;
                 match op {
                     flux_syntax::BinOp::Add => {
                         func.instruction(&Instruction::I32Add);
@@ -203,31 +283,56 @@ impl WasmCodegen {
                 name, value, body, ..
             } => {
                 // Compile the value
-                self.compile_expr_with_locals(value, locals, func)?;
+                self.compile_expr_with_locals(value, locals, func, func_index_map)?;
 
                 // Allocate a local and store
                 let local_idx = locals.add_local(name);
                 func.instruction(&Instruction::LocalSet(local_idx));
 
                 // Compile the body
-                self.compile_expr_with_locals(body, locals, func)?;
+                self.compile_expr_with_locals(body, locals, func, func_index_map)?;
             }
             Expr::Return { value, .. } => {
-                self.compile_expr_with_locals(value, locals, func)?;
+                self.compile_expr_with_locals(value, locals, func, func_index_map)?;
                 func.instruction(&Instruction::Return);
             }
             Expr::Block { stmts, .. } => {
                 if let Some(last) = stmts.last() {
-                    self.compile_expr_with_locals(last, locals, func)?;
+                    self.compile_expr_with_locals(last, locals, func, func_index_map)?;
                 } else {
                     func.instruction(&Instruction::I32Const(0));
                 }
             }
-            Expr::Call { .. } => {
-                // Function calls not yet implemented
-                return Err(FluxError::WasmError {
-                    message: "Function calls are not yet implemented".to_string(),
-                });
+            Expr::Call {
+                func: call_func,
+                args,
+                ..
+            } => {
+                // Resolve function name
+                let func_name = match call_func.as_ref() {
+                    Expr::Var { name, .. } => name,
+                    _ => {
+                        return Err(FluxError::WasmError {
+                            message: "Function calls must use a simple identifier".to_string(),
+                        });
+                    }
+                };
+
+                // Look up function index
+                let func_idx =
+                    func_index_map
+                        .get(func_name)
+                        .ok_or_else(|| FluxError::WasmError {
+                            message: format!("Unknown function: {}", func_name),
+                        })?;
+
+                // Compile arguments (push them onto the stack)
+                for arg in args {
+                    self.compile_expr_with_locals(arg, locals, func, func_index_map)?;
+                }
+
+                // Emit call instruction
+                func.instruction(&Instruction::Call(*func_idx));
             }
         }
         Ok(())
