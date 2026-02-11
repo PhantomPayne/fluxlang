@@ -102,10 +102,7 @@ impl<'a> SemanticChecker<'a> {
                 }
             }
             // Literals don't need checking
-            Expr::Int { .. }
-            | Expr::Float { .. }
-            | Expr::Bool { .. }
-            | Expr::String { .. } => {}
+            Expr::Int { .. } | Expr::Float { .. } | Expr::Bool { .. } | Expr::String { .. } => {}
         }
     }
 }

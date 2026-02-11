@@ -212,7 +212,7 @@ impl Parser {
         } else if self.current().kind == TokenKind::KwReturn {
             let start = self.current().span.start;
             self.advance();
-            
+
             let value = Box::new(self.parse_additive()?);
             let end = value.span().end;
 
@@ -415,9 +415,8 @@ mod tests {
         assert!(result.is_ok());
         let ast = result.unwrap();
         assert_eq!(ast.items.len(), 1);
-        if let Item::Function(func) = &ast.items[0] {
-            assert!(func.is_export);
-            assert_eq!(func.name, "plan");
-        }
+        let Item::Function(func) = &ast.items[0];
+        assert!(func.is_export);
+        assert_eq!(func.name, "plan");
     }
 }

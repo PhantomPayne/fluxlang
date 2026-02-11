@@ -30,7 +30,8 @@ fn test_parse_nested_expressions() {
 
 #[test]
 fn test_parse_bool_float_literals() {
-    let input = r#"fn test() { return true } fn test2() { return false } fn test3() { return 3.14 }"#;
+    let input =
+        r#"fn test() { return true } fn test2() { return false } fn test3() { return 3.14 }"#;
     let result = parse(input);
     insta::assert_debug_snapshot!(result);
 }

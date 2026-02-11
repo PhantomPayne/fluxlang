@@ -123,13 +123,6 @@ fn check_file(path: &str) -> Result<()> {
                         let export_marker = if func.is_export { "export " } else { "" };
                         println!("  - {}fn {}", export_marker, func.name);
                     }
-                    flux_syntax::Item::Import(import) => {
-                        println!(
-                            "  - import {{ {} }} from \"{}\"",
-                            import.items.join(", "),
-                            import.module
-                        );
-                    }
                 }
             }
             Ok(())

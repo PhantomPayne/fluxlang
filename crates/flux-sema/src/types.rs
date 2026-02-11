@@ -89,12 +89,14 @@ impl TypeChecker {
             Expr::Float { .. } => Ok(TypeInfo::Float),
             Expr::Bool { .. } => Ok(TypeInfo::Bool),
             Expr::String { .. } => Ok(TypeInfo::String),
-            Expr::Var { name, span } => env.get(name).cloned().ok_or_else(|| {
-                flux_errors::FluxError::UnknownIdentifier {
-                    name: name.clone(),
-                    span: span.to_source_span(),
-                }
-            }),
+            Expr::Var { name, span } => {
+                env.get(name)
+                    .cloned()
+                    .ok_or_else(|| flux_errors::FluxError::UnknownIdentifier {
+                        name: name.clone(),
+                        span: span.to_source_span(),
+                    })
+            }
             Expr::Binary {
                 op,
                 left,
@@ -106,10 +108,7 @@ impl TypeChecker {
                 self.check_binary_op(*op, left_ty, right_ty, *span)
             }
             Expr::Let {
-                name,
-                value,
-                body,
-                ..
+                name, value, body, ..
             } => {
                 let value_ty = self.infer_expr(value, env)?;
                 let mut new_env = env.clone();
@@ -236,7 +235,7 @@ mod tests {
         assert_eq!(checker.infer_expr(&int_expr, &env).unwrap(), TypeInfo::Int);
 
         let float_expr = flux_syntax::Expr::Float {
-            value: 3.14,
+            value: 1.414,
             span: flux_errors::Span::new(0, 4),
         };
         assert_eq!(
@@ -254,4 +253,3 @@ mod tests {
         );
     }
 }
-
