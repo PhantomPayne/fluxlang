@@ -1,34 +1,42 @@
-# LANGUAGE DESIGN DOCUMENT
+# Language Design Decisions
 
-## Introduction
-This document serves as a comprehensive language design document for the **FluxLang** programming language. It is organized to record design decisions, capturing their priority and impact on Language Server Protocol (LSP) development.
+## Temporal Types
+### Decision:
+- Implement temporal types to represent time-based data within the language. This allows for the precise modeling of dates, times, and intervals, with built-in support for time zones and formatting.
 
-## Template Sections
+### Status:
+- Accepted
 
-### 1. Design Decisions
-- **Decision**: [Describe the decision]
-- **Date**: [YYYY-MM-DD]
-- **Priority**: [High/Medium/Low]
-- **Impact on LSP**: [Describe how this decision impacts LSP]
+### Consequences:
+- Facilitates the creation of time-sensitive applications and improves usability in domains requiring complex date and time handling.
 
-### 2. Rationale
-- [Provide the rationale behind this decision]
+## Structural/Nominal Typing
+### Decision:
+- Adopt a hybrid typing system that allows both structural and nominal typing. This enables developers to choose between explicit interface definitions and flexible type implementations, enhancing code clarity and reusability.
 
-### 3. Alternatives Considered
-- [List alternatives that were considered and why they were not chosen]
+### Status:
+- Accepted
 
-### 4. Future Considerations
-- [Discuss any potential future work related to this decision]
+### Consequences:
+- Improves type safety without sacrificing convenience; allows developers to enforce type constraints while retaining flexibility.
 
-### 5. References
-- [Link to any relevant documentation or resources]
+## Explicit Returns
+### Decision:
+- Require explicit returns for functions to enhance code readability and predictability in function behavior. This means every function signature must clearly define its return type, ensuring developers understand what to expect from the function output.
+
+### Status:
+- Accepted
+
+### Consequences:
+- Promotes clearer function definitions, which can aid in debugging and reduces the chance of unintended behavior due to implicit return types.
 
 --- 
 
-## Examples
-- **Example 1**: [Provide an example related to the design decision]
-- **Example 2**: [Another example]
+## Future Additions
+- Here, various design decisions will be documented as they are made. 
+- [ ] New decision 1
+- [ ] New decision 2
+- [ ] New decision 3
+- [ ] New decision 4
 
---- 
-## Review & Updates
-This document should be reviewed and updated regularly to reflect new design decisions and changes in priorities.
+*Keep this section updated with new design decisions as they arise.*
