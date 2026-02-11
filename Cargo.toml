@@ -33,8 +33,10 @@ serde_json = "1.0"
 
 # WASM
 wasm-encoder = "0.220"
-wasmtime = "26.0"
+wasmtime = { version = "26.0", features = ["component-model"] }
 wat = "1.220"
+wit-bindgen = "0.30"
+wit-component = "0.220"
 
 # Salsa-like incremental computation
 salsa = "0.16"

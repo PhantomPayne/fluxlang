@@ -8,7 +8,7 @@ Flux is a functional, columnar-first language that targets WebAssembly (WASM).
 - **Structural Labels (`#label`)**: Metadata and annotations on types and functions
 - **Strong Type System**: Built-in types including `int`, `float`, `bool`, `string`, and comprehensive temporal types
 - **Temporal Types**: First-class support for `Date`, `Time`, `DateTime`, `Timestamp`, and `Duration`
-- **WASM Target**: Compile directly to WebAssembly for portable execution
+- **WASM Component Model**: Compile to WebAssembly Components with WIT interface types for rich type support
 - **LSP Support**: Full language server with hover, completion, and diagnostics
 
 ## Project Structure
@@ -18,8 +18,9 @@ This is a Rust workspace containing multiple crates:
 - `flux-syntax`: Lexer, parser, and AST definitions
 - `flux-errors`: Error handling with beautiful diagnostics (using miette)
 - `flux-sema`: Semantic analysis, type checking, and VFS (Virtual File System)
-- `flux-wasm`: WebAssembly code generation and wasmtime integration
+- `flux-wasm`: WebAssembly code generation using Component Model and WIT interface types
 - `flux-lsp`: Language Server Protocol implementation
+- `flux-cli`: Command-line interface for parsing, checking, and compiling Flux programs
 
 ## Getting Started
 
@@ -75,6 +76,38 @@ To use the extension in VS Code:
 2. Press F5 to launch the extension in a new VS Code window
 3. Create a `.flux` file to see syntax highlighting
 4. Set `FLUX_LSP_PATH` environment variable to the flux-lsp binary path for full LSP features
+
+## Compiling Flux Programs
+
+The `flux` CLI compiles Flux programs to WebAssembly Components:
+
+```bash
+# Build the CLI
+cargo build --release --bin flux
+
+# Compile a Flux program to a WASM component
+./target/release/flux compile examples/simple.flux output.wasm
+
+# Parse and display AST
+./target/release/flux parse examples/simple.flux
+
+# Check syntax without compiling
+./target/release/flux check examples/simple.flux
+```
+
+### WebAssembly Component Model
+
+Flux uses the [WebAssembly Component Model](https://github.com/WebAssembly/component-model) and [WIT (WebAssembly Interface Types)](https://github.com/WebAssembly/component-model/blob/main/design/mvp/WIT.md) to provide:
+
+- **Rich Type Support**: Native support for strings, records, and complex types
+- **Temporal Types**: First-class Date, Time, DateTime, Timestamp, and Duration types
+- **Cross-Language Interop**: Components can be used from any language supporting the Component Model
+- **Type Safety**: Compile-time type checking across language boundaries
+
+The WIT interface is defined in `crates/flux-wasm/wit/flux.wit` and includes:
+- Temporal type records (date, time, datetime, timestamp, duration)
+- Value variant for Flux expressions
+- Runtime interface for evaluation
 
 ## Language Syntax
 
@@ -189,6 +222,11 @@ The `flux-wasm` crate includes integration tests that compile Flux code to WASM 
 cd crates/flux-wasm
 cargo test
 ```
+
+Tests include:
+- Core WASM module tests (legacy format)
+- Component Model tests (default format)
+- Temporal type support tests
 
 ## Architecture
 

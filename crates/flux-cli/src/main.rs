@@ -61,7 +61,7 @@ Usage:
 
 Commands:
     parse <file.flux>              Parse and display AST
-    compile <file.flux> [out.wasm] Compile to WebAssembly
+    compile <file.flux> [out.wasm] Compile to WebAssembly Component
     check <file.flux>              Check syntax without compilation
     --version, -v                  Show version
     --help, -h                     Show this help
@@ -94,7 +94,7 @@ fn parse_file(path: &str) -> Result<()> {
 fn compile_file(input_path: &str, output_path: &str) -> Result<()> {
     let content = fs::read_to_string(input_path).into_diagnostic()?;
 
-    match flux_wasm::compile_to_wasm(&content) {
+    match flux_wasm::compile_to_component(&content) {
         Ok(wasm) => {
             fs::write(output_path, &wasm).into_diagnostic()?;
             println!("✓ Successfully compiled {} to {}", input_path, output_path);
