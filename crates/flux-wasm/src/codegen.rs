@@ -223,10 +223,98 @@ impl WasmCodegen {
                     func.instruction(&Instruction::I32Const(0));
                 }
             }
-            Expr::Call { .. } => {
-                // Function calls not yet implemented
+            Expr::Call { func: func_expr, args, .. } => {
+                // For now, support only simple function calls with Var as the function name
+                if let Expr::Var { name, .. } = func_expr.as_ref() {
+                    self.compile_builtin_call(name, args, locals, func)?;
+                } else {
+                    return Err(FluxError::WasmError {
+                        message: "Only direct function calls are supported (e.g., abs(x))".to_string(),
+                    });
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Compile a builtin function call
+    fn compile_builtin_call(
+        &mut self,
+        name: &str,
+        args: &[Expr],
+        locals: &mut LocalContext,
+        func: &mut Function,
+    ) -> Result<()> {
+        match name {
+            // Integer math functions
+            "abs" if args.len() == 1 => {
+                // abs(x) implemented as: (x >= 0) ? x : (0 - x)
+                self.compile_expr_with_locals(&args[0], locals, func)?;
+                // Duplicate x on stack
+                func.instruction(&Instruction::I32Const(0));
+                self.compile_expr_with_locals(&args[0], locals, func)?;
+                func.instruction(&Instruction::I32Sub);
+                // Stack now has: [x, 0-x]
+                self.compile_expr_with_locals(&args[0], locals, func)?;
+                func.instruction(&Instruction::I32Const(0));
+                func.instruction(&Instruction::I32GeS);
+                // Stack: [x, 0-x, x>=0]
+                func.instruction(&Instruction::Select);
+                // Select returns first value if condition is true, else second
+            }
+            "max" if args.len() == 2 => {
+                // max(a,b) = (a > b) ? a : b
+                self.compile_expr_with_locals(&args[0], locals, func)?;
+                self.compile_expr_with_locals(&args[1], locals, func)?;
+                // Stack: [a, b]
+                // Duplicate both for comparison
+                self.compile_expr_with_locals(&args[0], locals, func)?;
+                self.compile_expr_with_locals(&args[1], locals, func)?;
+                func.instruction(&Instruction::I32GtS);
+                // Stack: [a, b, a>b]
+                func.instruction(&Instruction::Select);
+            }
+            "min" if args.len() == 2 => {
+                // min(a,b) = (a < b) ? a : b
+                self.compile_expr_with_locals(&args[0], locals, func)?;
+                self.compile_expr_with_locals(&args[1], locals, func)?;
+                // Stack: [a, b]
+                self.compile_expr_with_locals(&args[0], locals, func)?;
+                self.compile_expr_with_locals(&args[1], locals, func)?;
+                func.instruction(&Instruction::I32LtS);
+                // Stack: [a, b, a<b]
+                func.instruction(&Instruction::Select);
+            }
+            // Float math functions
+            "sqrt" if args.len() == 1 => {
+                self.compile_expr_with_locals(&args[0], locals, func)?;
+                func.instruction(&Instruction::F64Sqrt);
+            }
+            "floor" if args.len() == 1 => {
+                self.compile_expr_with_locals(&args[0], locals, func)?;
+                func.instruction(&Instruction::F64Floor);
+            }
+            "ceil" if args.len() == 1 => {
+                self.compile_expr_with_locals(&args[0], locals, func)?;
+                func.instruction(&Instruction::F64Ceil);
+            }
+            "pow" if args.len() == 2 => {
+                // pow is not a single WASM instruction, so this is a placeholder
+                // In a real implementation, we'd either:
+                // 1. Import a math library function
+                // 2. Implement pow using a loop
+                // 3. Use WASM SIMD extensions if available
+                // For now, we'll return an error
                 return Err(FluxError::WasmError {
-                    message: "Function calls are not yet implemented".to_string(),
+                    message: format!(
+                        "Function '{}' requires stdlib support (not yet available as intrinsic)",
+                        name
+                    ),
+                });
+            }
+            _ => {
+                return Err(FluxError::WasmError {
+                    message: format!("Unknown builtin function: '{}'", name),
                 });
             }
         }
