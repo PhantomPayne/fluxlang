@@ -16,19 +16,19 @@ Ok(
                                 Table {
                                     element: Int(
                                         Span {
-                                            start: 21,
-                                            end: 24,
+                                            start: 23,
+                                            end: 26,
                                         },
                                     ),
                                     span: Span {
-                                        start: 15,
-                                        end: 25,
+                                        start: 17,
+                                        end: 27,
                                     },
                                 },
                             ),
                             span: Span {
-                                start: 10,
-                                end: 25,
+                                start: 11,
+                                end: 27,
                             },
                         },
                     ],
@@ -36,13 +36,13 @@ Ok(
                         Table {
                             element: String(
                                 Span {
-                                    start: 34,
-                                    end: 40,
+                                    start: 38,
+                                    end: 44,
                                 },
                             ),
                             span: Span {
-                                start: 28,
-                                end: 41,
+                                start: 32,
+                                end: 45,
                             },
                         },
                     ),
@@ -51,27 +51,27 @@ Ok(
                             Var {
                                 name: "data",
                                 span: Span {
-                                    start: 42,
-                                    end: 46,
+                                    start: 48,
+                                    end: 52,
                                 },
                             },
                         ],
                         span: Span {
-                            start: 41,
-                            end: 47,
+                            start: 46,
+                            end: 54,
                         },
                     },
                     labels: [],
                     span: Span {
                         start: 0,
-                        end: 47,
+                        end: 54,
                     },
                 },
             ),
         ],
         span: Span {
             start: 0,
-            end: 47,
+            end: 54,
         },
     },
 )

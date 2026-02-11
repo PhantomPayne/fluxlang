@@ -105,22 +105,21 @@ pub struct Token {
 pub fn tokenize(input: &str) -> Vec<Token> {
     let mut lexer = TokenKind::lexer(input);
     let mut tokens = Vec::new();
-    let mut offset = 0;
 
     while let Some(result) = lexer.next() {
         let kind = result.unwrap_or(TokenKind::Error);
         let text = lexer.slice().to_string();
-        let len = text.len();
-        let span = flux_errors::Span::new(offset, offset + len);
+        let span_range = lexer.span();
+        let span = flux_errors::Span::new(span_range.start, span_range.end);
         
         tokens.push(Token { kind, text, span });
-        offset += len;
     }
 
+    let end = input.len();
     tokens.push(Token {
         kind: TokenKind::Eof,
         text: String::new(),
-        span: flux_errors::Span::new(offset, offset),
+        span: flux_errors::Span::new(end, end),
     });
 
     tokens

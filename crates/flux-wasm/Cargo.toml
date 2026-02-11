@@ -7,7 +7,6 @@ authors.workspace = true
 
 [dependencies]
 flux-syntax = { path = "../flux-syntax" }
-flux-sema = { path = "../flux-sema" }
 flux-errors = { path = "../flux-errors" }
 wasm-encoder.workspace = true
 

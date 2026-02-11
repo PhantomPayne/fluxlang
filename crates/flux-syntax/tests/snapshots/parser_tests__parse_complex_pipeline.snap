@@ -16,27 +16,27 @@ Ok(
                                 Table {
                                     element: Int(
                                         Span {
-                                            start: 21,
-                                            end: 24,
+                                            start: 24,
+                                            end: 27,
                                         },
                                     ),
                                     span: Span {
-                                        start: 15,
-                                        end: 25,
+                                        start: 18,
+                                        end: 28,
                                     },
                                 },
                             ),
                             span: Span {
-                                start: 10,
-                                end: 25,
+                                start: 12,
+                                end: 28,
                             },
                         },
                     ],
                     return_type: Some(
                         Int(
                             Span {
-                                start: 28,
-                                end: 31,
+                                start: 33,
+                                end: 36,
                             },
                         ),
                     ),
@@ -47,66 +47,66 @@ Ok(
                                     left: Var {
                                         name: "data",
                                         span: Span {
-                                            start: 32,
-                                            end: 36,
+                                            start: 43,
+                                            end: 47,
                                         },
                                     },
                                     right: Call {
                                         func: Var {
                                             name: "filter",
                                             span: Span {
-                                                start: 38,
-                                                end: 44,
+                                                start: 51,
+                                                end: 57,
                                             },
                                         },
                                         args: [
                                             Label {
                                                 name: "#active",
                                                 span: Span {
-                                                    start: 45,
-                                                    end: 52,
+                                                    start: 58,
+                                                    end: 65,
                                                 },
                                             },
                                         ],
                                         span: Span {
-                                            start: 38,
-                                            end: 53,
+                                            start: 51,
+                                            end: 66,
                                         },
                                     },
                                     span: Span {
-                                        start: 32,
-                                        end: 53,
+                                        start: 43,
+                                        end: 66,
                                     },
                                 },
                                 right: Var {
                                     name: "sum",
                                     span: Span {
-                                        start: 55,
-                                        end: 58,
+                                        start: 70,
+                                        end: 73,
                                     },
                                 },
                                 span: Span {
-                                    start: 32,
-                                    end: 58,
+                                    start: 43,
+                                    end: 73,
                                 },
                             },
                         ],
                         span: Span {
-                            start: 31,
-                            end: 59,
+                            start: 37,
+                            end: 75,
                         },
                     },
                     labels: [],
                     span: Span {
-                        start: 0,
-                        end: 59,
+                        start: 1,
+                        end: 75,
                     },
                 },
             ),
         ],
         span: Span {
-            start: 0,
-            end: 59,
+            start: 1,
+            end: 75,
         },
     },
 )

@@ -15,14 +15,14 @@ Ok(
                             ty: Some(
                                 Int(
                                     Span {
-                                        start: 8,
-                                        end: 11,
+                                        start: 10,
+                                        end: 13,
                                     },
                                 ),
                             ),
                             span: Span {
-                                start: 6,
-                                end: 11,
+                                start: 7,
+                                end: 13,
                             },
                         },
                         Param {
@@ -30,22 +30,22 @@ Ok(
                             ty: Some(
                                 Int(
                                     Span {
-                                        start: 14,
-                                        end: 17,
+                                        start: 18,
+                                        end: 21,
                                     },
                                 ),
                             ),
                             span: Span {
-                                start: 12,
-                                end: 17,
+                                start: 15,
+                                end: 21,
                             },
                         },
                     ],
                     return_type: Some(
                         Int(
                             Span {
-                                start: 20,
-                                end: 23,
+                                start: 26,
+                                end: 29,
                             },
                         ),
                     ),
@@ -56,39 +56,39 @@ Ok(
                                 left: Var {
                                     name: "x",
                                     span: Span {
-                                        start: 24,
-                                        end: 25,
+                                        start: 32,
+                                        end: 33,
                                     },
                                 },
                                 right: Var {
                                     name: "y",
                                     span: Span {
-                                        start: 26,
-                                        end: 27,
+                                        start: 36,
+                                        end: 37,
                                     },
                                 },
                                 span: Span {
-                                    start: 24,
-                                    end: 27,
+                                    start: 32,
+                                    end: 37,
                                 },
                             },
                         ],
                         span: Span {
-                            start: 23,
-                            end: 28,
+                            start: 30,
+                            end: 39,
                         },
                     },
                     labels: [],
                     span: Span {
                         start: 0,
-                        end: 28,
+                        end: 39,
                     },
                 },
             ),
         ],
         span: Span {
             start: 0,
-            end: 28,
+            end: 39,
         },
     },
 )

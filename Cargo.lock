@@ -578,7 +578,6 @@ name = "flux-wasm"
 version = "0.1.0"
 dependencies = [
  "flux-errors",
- "flux-sema",
  "flux-syntax",
  "wasm-encoder 0.220.1",
  "wasmtime",

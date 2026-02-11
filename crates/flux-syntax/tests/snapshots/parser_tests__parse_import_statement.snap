@@ -7,7 +7,7 @@ Err(
         message: "Expected Ident, found TyTable",
         span: SourceSpan {
             offset: SourceOffset(
-                7,
+                9,
             ),
             length: 5,
         },

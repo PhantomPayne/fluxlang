@@ -14,8 +14,8 @@ Ok(
                             name: "data",
                             ty: None,
                             span: Span {
-                                start: 10,
-                                end: 14,
+                                start: 11,
+                                end: 15,
                             },
                         },
                     ],
@@ -28,63 +28,63 @@ Ok(
                                         left: Var {
                                             name: "data",
                                             span: Span {
-                                                start: 16,
-                                                end: 20,
+                                                start: 19,
+                                                end: 23,
                                             },
                                         },
                                         right: Var {
                                             name: "filter",
                                             span: Span {
-                                                start: 22,
-                                                end: 28,
+                                                start: 27,
+                                                end: 33,
                                             },
                                         },
                                         span: Span {
-                                            start: 16,
-                                            end: 28,
+                                            start: 19,
+                                            end: 33,
                                         },
                                     },
                                     right: Var {
                                         name: "map",
                                         span: Span {
-                                            start: 30,
-                                            end: 33,
+                                            start: 37,
+                                            end: 40,
                                         },
                                     },
                                     span: Span {
-                                        start: 16,
-                                        end: 33,
+                                        start: 19,
+                                        end: 40,
                                     },
                                 },
                                 right: Var {
                                     name: "reduce",
                                     span: Span {
-                                        start: 35,
-                                        end: 41,
+                                        start: 44,
+                                        end: 50,
                                     },
                                 },
                                 span: Span {
-                                    start: 16,
-                                    end: 41,
+                                    start: 19,
+                                    end: 50,
                                 },
                             },
                         ],
                         span: Span {
-                            start: 15,
-                            end: 42,
+                            start: 17,
+                            end: 52,
                         },
                     },
                     labels: [],
                     span: Span {
                         start: 0,
-                        end: 42,
+                        end: 52,
                     },
                 },
             ),
         ],
         span: Span {
             start: 0,
-            end: 42,
+            end: 52,
         },
     },
 )
