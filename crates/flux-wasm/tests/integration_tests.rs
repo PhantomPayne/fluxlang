@@ -154,12 +154,11 @@ fn test_component_compilation_simple() {
     let source = "fn main() { 42 }";
     let component_bytes = compile_to_component(source).expect("Component compilation failed");
 
-    // Verify it's a valid component by loading it
+    // Verify it's a valid component by loading it with wasmtime
     let engine = Engine::default();
-    let _component =
-        Component::from_binary(&engine, &component_bytes).expect("Failed to create component");
+    Component::from_binary(&engine, &component_bytes).expect("Failed to create component");
 
-    // Component was successfully created
+    // Verify component bytes were generated
     assert!(!component_bytes.is_empty());
 }
 

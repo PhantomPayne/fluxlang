@@ -73,8 +73,11 @@ impl WasmCodegen {
         Ok(encoder)
     }
 
-    /// Map a Flux type to the corresponding WIT type representation
-    /// This is a helper for future WIT integration
+    /// Map a Flux type to the corresponding WIT type name
+    ///
+    /// This helper will be used when implementing the full WIT adapter layer
+    /// for binding Flux functions to component exports with proper type mapping.
+    /// Currently preserved as documentation of the type mapping strategy.
     #[allow(dead_code)]
     fn flux_type_to_wit_name(&self, ty: &Type) -> &'static str {
         match ty {
