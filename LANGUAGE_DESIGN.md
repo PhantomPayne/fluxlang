@@ -1,7 +1,7 @@
 # Language Design Decisions
 
 ## Temporal Types
-### Decision:
+### Overview:
 Implement a comprehensive set of temporal types to represent time-based data with precision and clarity. The type system distinguishes between different time concepts to avoid common bugs and ambiguities in time handling.
 
 ### Temporal Type System:
