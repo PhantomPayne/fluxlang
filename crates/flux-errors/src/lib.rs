@@ -114,7 +114,9 @@ fn offset_to_position(content: &str, offset: usize) -> (usize, usize) {
             line += 1;
             character = 0;
         } else {
-            character += 1;
+            // LSP uses UTF-16 code units for character positions
+            // Count UTF-16 code units for this character
+            character += c.len_utf16();
         }
         
         current_offset += c.len_utf8();

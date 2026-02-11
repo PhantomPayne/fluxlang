@@ -186,6 +186,7 @@ mod tests {
 
     #[test]
     fn test_let_binding_creates_scope() {
+        // Note: Flux's let syntax is `let x = value body` without an 'in' keyword
         let source = r#"
             fn test() -> int {
                 let x = 5 x
