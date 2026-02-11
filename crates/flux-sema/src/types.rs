@@ -90,23 +90,25 @@ impl TypeChecker {
     /// Build function registry from AST
     pub fn build_function_registry(ast: &flux_syntax::SourceFile) -> HashMap<String, TypeInfo> {
         let mut functions = HashMap::new();
-        
+
+        #[allow(irrefutable_let_patterns)]
         for item in &ast.items {
             if let flux_syntax::Item::Function(func) = item {
                 let params = func
                     .params
                     .iter()
                     .map(|param| {
-                        param.ty.as_ref().map_or(TypeInfo::Unknown, |ty| {
-                            Self::type_from_ast(ty)
-                        })
+                        param
+                            .ty
+                            .as_ref()
+                            .map_or(TypeInfo::Unknown, Self::type_from_ast)
                     })
                     .collect();
 
                 let ret = func
                     .return_type
                     .as_ref()
-                    .map_or(TypeInfo::Unknown, |ty| Self::type_from_ast(ty));
+                    .map_or(TypeInfo::Unknown, Self::type_from_ast);
 
                 functions.insert(
                     func.name.clone(),
@@ -117,7 +119,7 @@ impl TypeChecker {
                 );
             }
         }
-        
+
         functions
     }
 
@@ -261,7 +263,7 @@ impl TypeChecker {
         // Check argument types
         for (i, (arg, expected_type)) in args.iter().zip(params.iter()).enumerate() {
             let arg_type = self.infer_expr(arg, env)?;
-            
+
             // Allow Unknown types to pass (for untyped parameters)
             if arg_type != *expected_type
                 && arg_type != TypeInfo::Unknown
@@ -462,7 +464,7 @@ mod tests {
         let registry = TypeChecker::build_function_registry(&ast);
 
         assert_eq!(registry.len(), 2);
-        
+
         let add_type = registry.get("add").unwrap();
         assert!(matches!(add_type, TypeInfo::Function { .. }));
         if let TypeInfo::Function { params, ret } = add_type {
@@ -564,7 +566,7 @@ mod tests {
             span: flux_errors::Span::new(4, 5),
         };
         let arg2 = flux_syntax::Expr::Float {
-            value: 3.14,
+            value: 3.5,
             span: flux_errors::Span::new(7, 11),
         };
         let call = flux_syntax::Expr::Call {

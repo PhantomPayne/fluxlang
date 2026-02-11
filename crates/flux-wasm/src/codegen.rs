@@ -79,6 +79,7 @@ impl WasmCodegen {
 
         // Build function index map
         let mut func_index_map = HashMap::new();
+        #[allow(irrefutable_let_patterns)]
         for (idx, item) in ast.items.iter().enumerate() {
             if let flux_syntax::Item::Function(func) = item {
                 func_index_map.insert(func.name.clone(), idx as u32);
@@ -87,20 +88,22 @@ impl WasmCodegen {
 
         // Create type section - register type signatures for all functions
         let mut types = TypeSection::new();
-        let mut type_index_map = HashMap::new();
-        
+        let mut type_index_map: HashMap<String, u32> = HashMap::new();
+
+        #[allow(irrefutable_let_patterns)]
         for item in &ast.items {
             if let flux_syntax::Item::Function(func) = item {
                 let param_types: Vec<ValType> = func
                     .params
                     .iter()
                     .map(|param| {
-                        param.ty.as_ref().map_or(ValType::I32, |ty| {
-                            self.flux_type_to_valtype(ty)
-                        })
+                        param
+                            .ty
+                            .as_ref()
+                            .map_or(ValType::I32, |ty| self.flux_type_to_valtype(ty))
                     })
                     .collect();
-                
+
                 let return_type = func
                     .return_type
                     .as_ref()
@@ -122,18 +125,20 @@ impl WasmCodegen {
 
         // Create function section - register all functions
         let mut functions = FunctionSection::new();
+        #[allow(irrefutable_let_patterns)]
         for item in &ast.items {
             if let flux_syntax::Item::Function(func) = item {
                 let param_types: Vec<ValType> = func
                     .params
                     .iter()
                     .map(|param| {
-                        param.ty.as_ref().map_or(ValType::I32, |ty| {
-                            self.flux_type_to_valtype(ty)
-                        })
+                        param
+                            .ty
+                            .as_ref()
+                            .map_or(ValType::I32, |ty| self.flux_type_to_valtype(ty))
                     })
                     .collect();
-                
+
                 let return_type = func
                     .return_type
                     .as_ref()
@@ -141,7 +146,7 @@ impl WasmCodegen {
 
                 let type_key = format!("{:?}->{:?}", param_types, return_type);
                 let type_idx = type_index_map[&type_key];
-                functions.function(type_idx as u32);
+                functions.function(type_idx);
             }
         }
         module.section(&functions);
@@ -155,7 +160,8 @@ impl WasmCodegen {
 
         // Create code section - compile all functions
         let mut codes = CodeSection::new();
-        
+
+        #[allow(irrefutable_let_patterns)]
         for item in &ast.items {
             if let flux_syntax::Item::Function(func_def) = item {
                 let mut locals_ctx = LocalContext::new();
@@ -295,7 +301,11 @@ impl WasmCodegen {
                     func.instruction(&Instruction::I32Const(0));
                 }
             }
-            Expr::Call { func: call_func, args, .. } => {
+            Expr::Call {
+                func: call_func,
+                args,
+                ..
+            } => {
                 // Resolve function name
                 let func_name = match call_func.as_ref() {
                     Expr::Var { name, .. } => name,
@@ -307,11 +317,12 @@ impl WasmCodegen {
                 };
 
                 // Look up function index
-                let func_idx = func_index_map.get(func_name).ok_or_else(|| {
-                    FluxError::WasmError {
-                        message: format!("Unknown function: {}", func_name),
-                    }
-                })?;
+                let func_idx =
+                    func_index_map
+                        .get(func_name)
+                        .ok_or_else(|| FluxError::WasmError {
+                            message: format!("Unknown function: {}", func_name),
+                        })?;
 
                 // Compile arguments (push them onto the stack)
                 for arg in args {

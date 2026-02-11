@@ -87,9 +87,10 @@ impl SymbolBridge {
                         .params
                         .iter()
                         .map(|param| {
-                            param.ty.as_ref().map_or(TypeInfo::Unknown, |ty| {
-                                self.type_from_ast(ty)
-                            })
+                            param
+                                .ty
+                                .as_ref()
+                                .map_or(TypeInfo::Unknown, |ty| self.type_from_ast(ty))
                         })
                         .collect();
 
