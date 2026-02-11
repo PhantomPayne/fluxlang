@@ -1,0 +1,20 @@
+[package]
+name = "flux-lsp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "flux-lsp"
+path = "src/main.rs"
+
+[dependencies]
+flux-syntax = { path = "../flux-syntax" }
+flux-sema = { path = "../flux-sema" }
+flux-errors = { path = "../flux-errors" }
+tower-lsp.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+dashmap.workspace = true

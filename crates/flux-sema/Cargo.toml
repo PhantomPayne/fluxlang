@@ -1,0 +1,13 @@
+[package]
+name = "flux-sema"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+flux-syntax = { path = "../flux-syntax" }
+flux-errors = { path = "../flux-errors" }
+salsa.workspace = true
+dashmap.workspace = true
+parking_lot.workspace = true
