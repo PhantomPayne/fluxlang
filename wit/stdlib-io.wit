@@ -1,0 +1,16 @@
+package flux:std@0.1.0;
+
+/// I/O functions for the Flux standard library
+interface io {
+    /// Print a string to stdout with a newline
+    println: func(s: string);
+    
+    /// Print a string to stderr with a newline
+    eprintln: func(s: string);
+    
+    /// Print a string to stdout without a newline
+    print: func(s: string);
+    
+    /// Print a string to stderr without a newline
+    eprint: func(s: string);
+}

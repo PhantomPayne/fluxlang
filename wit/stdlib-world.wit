@@ -1,0 +1,8 @@
+package flux:std@0.1.0;
+
+/// World that exports all stdlib interfaces
+world stdlib {
+    export math;
+    export io;
+    export temporal;
+}

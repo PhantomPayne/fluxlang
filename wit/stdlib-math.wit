@@ -1,0 +1,34 @@
+package flux:std@0.1.0;
+
+/// Mathematical functions for the Flux standard library
+interface math {
+    /// Compute the absolute value of a signed integer
+    abs-int: func(x: s64) -> s64;
+    
+    /// Compute the absolute value of a floating-point number
+    abs-float: func(x: f64) -> f64;
+    
+    /// Compute x raised to the power of y
+    pow: func(x: f64, y: f64) -> f64;
+    
+    /// Return the maximum of two integers
+    max-int: func(a: s64, b: s64) -> s64;
+    
+    /// Return the minimum of two integers
+    min-int: func(a: s64, b: s64) -> s64;
+    
+    /// Return the maximum of two floats
+    max-float: func(a: f64, b: f64) -> f64;
+    
+    /// Return the minimum of two floats
+    min-float: func(a: f64, b: f64) -> f64;
+    
+    /// Compute the square root of a number
+    sqrt: func(x: f64) -> f64;
+    
+    /// Compute the floor of a number (round down)
+    floor: func(x: f64) -> f64;
+    
+    /// Compute the ceiling of a number (round up)
+    ceil: func(x: f64) -> f64;
+}

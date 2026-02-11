@@ -6,7 +6,7 @@ members = [
     "crates/flux-sema",
     "crates/flux-wasm",
     "crates/flux-lsp",
-    "crates/flux-cli",
+    "crates/flux-cli", "crates/flux-stdlib",
 ]
 
 [workspace.package]
