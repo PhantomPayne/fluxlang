@@ -1,7 +1,5 @@
 // Example Flux program demonstrating key features
 
-import { Table, filter, map, reduce } from "std"
-
 // Simple function with type annotations
 fn add(x: int, y: int) -> int {
     x + y
@@ -15,9 +13,24 @@ fn process(data: Table<int>) -> int {
     |> reduce(add, 0)
 }
 
-// Helper function
+// Helper functions
 fn double(x: int) -> int {
     x * 2
+}
+
+fn filter(predicate) {
+    // native implementation
+    0
+}
+
+fn map(f) {
+    // native implementation
+    0
+}
+
+fn reduce(f, init) {
+    // native implementation
+    0
 }
 
 // Plan skeleton - entry point for Flux programs
