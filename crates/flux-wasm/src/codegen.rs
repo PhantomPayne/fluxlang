@@ -223,13 +223,18 @@ impl WasmCodegen {
                     func.instruction(&Instruction::I32Const(0));
                 }
             }
-            Expr::Call { func: func_expr, args, .. } => {
+            Expr::Call {
+                func: func_expr,
+                args,
+                ..
+            } => {
                 // For now, support only simple function calls with Var as the function name
                 if let Expr::Var { name, .. } = func_expr.as_ref() {
                     self.compile_builtin_call(name, args, locals, func)?;
                 } else {
                     return Err(FluxError::WasmError {
-                        message: "Only direct function calls are supported (e.g., abs(x))".to_string(),
+                        message: "Only direct function calls are supported (e.g., abs(x))"
+                            .to_string(),
                     });
                 }
             }
