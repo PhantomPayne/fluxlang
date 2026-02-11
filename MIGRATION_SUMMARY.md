@@ -38,16 +38,16 @@ The Flux WASM backend has been successfully migrated from raw `wasm-encoder` to 
 
 ## Technical Details
 
-### Component vs Core Module Comparison
+### Component Compilation
 
 ```bash
-# Component format (default)
+# Component format (CLI default)
 flux compile examples/simple.flux output.wasm
 # Output: 108 bytes (includes component metadata)
 # Format: WebAssembly version 0x1000d (Component Model)
 
-# Core module (legacy)
-flux compile examples/simple.flux output.wasm --core
+# Core module (programmatic API)
+# Use compile_to_wasm() for programmatic access to core modules
 # Output: 43 bytes (bare minimum)
 # Format: WebAssembly version 0x1 (MVP)
 ```

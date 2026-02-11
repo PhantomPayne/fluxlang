@@ -30,9 +30,9 @@ The Flux WASM backend has been migrated from raw `wasm-encoder` to the **WebAsse
 
 #### flux-cli/src/main.rs
 
-- Changed default compilation to use Component Model
-- Added `--core` flag to compile to legacy core WASM modules
-- Updated help text to reflect component-first approach
+- Changed to always compile to Component Model
+- Simplified compilation logic
+- Updated help text to reflect component-only approach
 
 #### flux-wasm/tests/integration_tests.rs
 
@@ -48,14 +48,12 @@ The Flux WASM backend has been migrated from raw `wasm-encoder` to the **WebAsse
 
 **None** - This is a backward-compatible migration:
 
-- Old `compile_to_wasm()` function still works
-- CLI accepts `--core` flag for legacy format
+- Old `compile_to_wasm()` function still works for programmatic use
 - All existing tests pass
-- Core module format is still available
 
 ### New Capabilities
 
-1. **Component Format**: Default output is now WASM components
+1. **Component Format**: CLI output is WASM components
 2. **Type Mapping**: Infrastructure for mapping Flux types to WIT types
 3. **Future Support**: Foundation for:
    - String operations
@@ -73,20 +71,12 @@ All tests pass:
 
 ## Usage Examples
 
-### Compile to Component (Default)
+### Compile to Component
 
 ```bash
 flux compile examples/simple.flux output.wasm
-# Output: ✓ Successfully compiled examples/simple.flux to output.wasm (component)
+# Output: ✓ Successfully compiled examples/simple.flux to output.wasm
 #         WASM size: 108 bytes
-```
-
-### Compile to Core Module (Legacy)
-
-```bash
-flux compile examples/simple.flux output.wasm --core
-# Output: ✓ Successfully compiled examples/simple.flux to output.wasm (core module)
-#         WASM size: 41 bytes
 ```
 
 ### Programmatic Usage
@@ -94,10 +84,10 @@ flux compile examples/simple.flux output.wasm --core
 ```rust
 use flux_wasm::{compile_to_wasm, compile_to_component};
 
-// Legacy core module
+// Legacy core module (for programmatic use)
 let core_bytes = compile_to_wasm("fn main() { 42 }")?;
 
-// New component format
+// Component format (CLI default)
 let component_bytes = compile_to_component("fn main() { 42 }")?;
 ```
 

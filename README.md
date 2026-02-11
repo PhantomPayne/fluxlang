@@ -79,7 +79,7 @@ To use the extension in VS Code:
 
 ## Compiling Flux Programs
 
-The `flux` CLI compiles Flux programs to WebAssembly Components by default:
+The `flux` CLI compiles Flux programs to WebAssembly Components:
 
 ```bash
 # Build the CLI
@@ -87,9 +87,6 @@ cargo build --release --bin flux
 
 # Compile a Flux program to a WASM component
 ./target/release/flux compile examples/simple.flux output.wasm
-
-# Compile to a legacy core WASM module (without component wrapper)
-./target/release/flux compile examples/simple.flux output.wasm --core
 
 # Parse and display AST
 ./target/release/flux parse examples/simple.flux
