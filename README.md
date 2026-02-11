@@ -1,15 +1,62 @@
 # Flux Language
 
-Flux is a functional, columnar-first language that targets WebAssembly (WASM).
+Flux is a functional language that targets WebAssembly Components. This is currently a **minimal boilerplate** implementation with a small but complete feature set.
 
-## Features
+## Current Status
 
-- **Pipeline Operator (`|>`)**: Chain operations in a readable, left-to-right flow
-- **Structural Labels (`#label`)**: Metadata and annotations on types and functions
-- **Strong Type System**: Built-in types including `int`, `float`, `bool`, `string`, and comprehensive temporal types
-- **Temporal Types**: First-class support for `Date`, `Time`, `DateTime`, `Timestamp`, and `Duration`
-- **WASM Component Model**: Compile to WebAssembly Components with WIT interface types for rich type support
-- **LSP Support**: Full language server with hover, completion, and diagnostics
+This is a clean, minimal implementation focused on core functionality. Features are fully implemented and type-safe, not placeholders.
+
+## Supported Features
+
+### Types
+- `int` - 64-bit signed integers (i64)
+- `float` - 64-bit floating point (f64)
+- `bool` - Boolean values
+- `string` - String literals (basic support)
+
+### Expressions
+- **Literals**: `42`, `3.14`, `true`, `false`, `"hello"`
+- **Variables**: `x`, `my_var`
+- **Binary operators**: `+`, `-`, `*`, `/` (type-checked, no mixing int and float)
+- **Let bindings**: `let x = 42 return x + 10`
+- **Blocks**: `{ let x = 1 return x }`
+- **Return statements**: `return expr` (explicit returns required)
+
+### Declarations
+- **Functions**: `fn name(param: type) -> type { return expr }`
+- **Function parameters**: Must have type annotations
+- **Return types**: Must be explicitly declared
+- **Exported functions**: `export fn name() -> type { return expr }`
+
+### Type System
+- **Type inference**: For let bindings
+- **Type checking**: Binary operations enforce same numeric type
+- **Type errors**: Clear error messages for type mismatches
+
+## Examples
+
+### Simple Function
+```flux
+fn main() -> int {
+    return (5 + 3) * 2
+}
+```
+
+### Let Bindings
+```flux
+fn calculate() -> int {
+    let x = 10
+    let y = 32
+    return x + y
+}
+```
+
+### Type Error (won't compile)
+```flux
+fn bad_add(x: int, y: float) -> float {
+    return x + y  // ERROR: Cannot mix int and float
+}
+```
 
 ## Project Structure
 
@@ -17,17 +64,16 @@ This is a Rust workspace containing multiple crates:
 
 - `flux-syntax`: Lexer, parser, and AST definitions
 - `flux-errors`: Error handling with beautiful diagnostics (using miette)
-- `flux-sema`: Semantic analysis, type checking, and VFS (Virtual File System)
-- `flux-wasm`: WebAssembly code generation using Component Model and WIT interface types
+- `flux-sema`: Semantic analysis, type checking, symbol table, and VFS
+- `flux-wasm`: WebAssembly Component code generation
 - `flux-lsp`: Language Server Protocol implementation
-- `flux-cli`: Command-line interface for parsing, checking, and compiling Flux programs
+- `flux-cli`: Command-line interface for parsing, checking, and compiling
 
 ## Getting Started
 
 ### Prerequisites
 
 - Rust 1.70+ (install from [rustup.rs](https://rustup.rs))
-- Node.js 18+ (for VS Code extension)
 
 ### Building
 
@@ -41,11 +87,113 @@ cargo build --release
 # Run tests
 cargo test
 
-# Run tests with snapshot updates
-cargo test -- --test-threads=1
+# Format code
+cargo fmt --all
+
+# Check for warnings
+cargo clippy --all-targets -- -D warnings
 ```
 
-### Running the LSP Server
+## Using the CLI
+
+```bash
+# Build the CLI
+cargo build --release --bin flux
+
+# Check a Flux program
+./target/release/flux check examples/simple.flux
+
+# Compile to WASM component
+./target/release/flux compile examples/simple.flux output.wasm
+
+# Parse and display AST
+./target/release/flux parse examples/simple.flux
+```
+
+## WebAssembly Component Model
+
+Flux compiles to the [WebAssembly Component Model](https://github.com/WebAssembly/component-model), providing:
+
+- **Type Safety**: Components with well-defined interfaces
+- **Interoperability**: Components can be used from any language
+- **Standards-based**: Uses WIT (WebAssembly Interface Types)
+
+The compiled components can be executed with:
+```bash
+wasmtime output.wasm
+```
+
+## Type Checking
+
+Flux enforces type safety at compile time:
+
+```flux
+// ✓ Valid: same types
+fn add_ints(x: int, y: int) -> int {
+    return x + y
+}
+
+// ✗ Type error: cannot mix int and float
+fn bad_add(x: int, y: float) -> float {
+    return x + y  // ERROR
+}
+
+// ✓ Valid: let binding with type inference
+fn with_let() -> int {
+    let x = 10      // inferred as int
+    let y = 32      // inferred as int
+    return x + y    // valid: both int
+}
+```
+
+## Testing
+
+### Run All Tests
+```bash
+cargo test
+```
+
+### Test Individual Crates
+```bash
+cargo test -p flux-syntax
+cargo test -p flux-sema
+cargo test -p flux-wasm
+```
+
+### Snapshot Tests
+```bash
+# Update snapshots after parser changes
+INSTA_UPDATE=always cargo test -p flux-syntax
+```
+
+## Architecture
+
+### Compiler Pipeline
+1. **Lexer** (`flux-syntax`): Source → Tokens
+2. **Parser** (`flux-syntax`): Tokens → AST
+3. **Type Checker** (`flux-sema`): AST → Type-checked AST + Errors
+4. **Code Generator** (`flux-wasm`): AST → WASM Component
+
+### Error Handling
+All errors use `miette` for beautiful, helpful error messages with:
+- Source code snippets
+- Error locations highlighted
+- Helpful suggestions
+
+Example error output:
+```
+✗ Type error: Cannot apply Add to int and float.
+  Both operands must be the same numeric type.
+  ╭─[example.flux:3:12]
+3 │     return x + y
+  ·            ─────┬────
+  ·                 ╰─── here
+  ╰────
+```
+
+## Language Server (LSP)
+
+Basic LSP support is available:
 
 ```bash
 # Build the LSP server
@@ -54,207 +202,44 @@ cargo build --release --bin flux-lsp
 # The binary will be at: target/release/flux-lsp
 ```
 
-### VS Code Extension
+Features:
+- Syntax error diagnostics
+- Basic parsing support
 
-The VS Code extension provides syntax highlighting and LSP integration:
+## What's NOT Included
 
-```bash
-cd editors/vscode
+To keep this a clean, minimal boilerplate, the following are **not** implemented:
 
-# Install dependencies
-npm install
+- Temporal types (Date, Time, DateTime, Timestamp, Duration)
+- Pipeline operator (`|>`)
+- Labels (`#label`)
+- If expressions
+- Comparison operators (`<`, `>`)
+- Import statements
+- Function calls (placeholder error)
+- Standard library
 
-# Compile TypeScript
-npm run compile
-
-# Run tests
-npm test
-```
-
-To use the extension in VS Code:
-1. Open the `editors/vscode` folder in VS Code
-2. Press F5 to launch the extension in a new VS Code window
-3. Create a `.flux` file to see syntax highlighting
-4. Set `FLUX_LSP_PATH` environment variable to the flux-lsp binary path for full LSP features
-
-## Compiling Flux Programs
-
-The `flux` CLI compiles Flux programs to WebAssembly Components:
-
-```bash
-# Build the CLI
-cargo build --release --bin flux
-
-# Compile a Flux program to a WASM component
-./target/release/flux compile examples/simple.flux output.wasm
-
-# Parse and display AST
-./target/release/flux parse examples/simple.flux
-
-# Check syntax without compiling
-./target/release/flux check examples/simple.flux
-```
-
-### WebAssembly Component Model
-
-Flux uses the [WebAssembly Component Model](https://github.com/WebAssembly/component-model) and [WIT (WebAssembly Interface Types)](https://github.com/WebAssembly/component-model/blob/main/design/mvp/WIT.md) to provide:
-
-- **Rich Type Support**: Native support for strings, records, and complex types
-- **Temporal Types**: First-class Date, Time, DateTime, Timestamp, and Duration types
-- **Cross-Language Interop**: Components can be used from any language supporting the Component Model
-- **Type Safety**: Compile-time type checking across language boundaries
-
-The WIT interface is defined in `crates/flux-wasm/wit/flux.wit` and includes:
-- Temporal type records (date, time, datetime, timestamp, duration)
-- Value variant for Flux expressions
-- Runtime interface for evaluation
-
-## Language Syntax
-
-### Function Definition
-
-```flux
-fn add(x: int, y: int) -> int {
-    x + y
-}
-
-export fn plan(ctx) -> Project {
-    ctx
-}
-```
-
-### Pipeline Operations
-
-```flux
-fn process(value: int) -> int {
-    value |> filter(#active) |> sum
-}
-```
-
-### Imports
-
-```flux
-import { Date, Time, filter, map } from "std"
-```
-
-### Basic Types
-
-```flux
-fn example_types() {
-    let x: int = 42
-    let y: float = 3.14
-    let flag: bool = true
-    let name: string = "Flux"
-}
-```
-
-### Labels
-
-```flux
-fn tagged() {
-    #primary
-    #secondary_label
-}
-```
-
-### Temporal Types
-
-Flux includes comprehensive temporal types for robust time handling:
-
-```flux
-// Calendar date only (YYYY-MM-DD)
-fn get_birth_date() -> Date {
-    return Date(1990, 6, 15)
-}
-
-// Time of day only (HH:mm:ss)
-fn get_meeting_time() -> Time {
-    return Time(14, 30, 0)
-}
-
-// Date + time + timezone (always with timezone)
-fn schedule_event(local_time: DateTime) -> DateTime {
-    return local_time
-}
-
-// Absolute UTC time for events/logs
-fn log_event() -> Timestamp {
-    return now()
-}
-
-// Unified duration supporting all time units
-fn calculate_elapsed(start: Timestamp, end: Timestamp) -> Duration {
-    return end - start
-}
-```
-
-**Temporal Type Selection Guide:**
-- Use `Date` for dates without time-of-day (birthdays, anniversaries)
-- Use `Time` for time-of-day without date (schedules, recurring times)
-- Use `DateTime` for user-facing times with timezone (event scheduling, display)
-- Use `Timestamp` for absolute time points (event logs, causality, ordering)
-- Use `Duration` for time intervals (elapsed time, time arithmetic)
-
-## Testing
-
-The project includes comprehensive testing at multiple levels:
-
-### Unit Tests
-
-Each crate has unit tests. Run with:
-```bash
-cargo test
-```
-
-### Snapshot Tests
-
-The `flux-syntax` crate uses `insta` for snapshot testing:
-```bash
-cd crates/flux-syntax
-cargo test
-cargo insta review  # Review snapshot changes
-```
-
-### Integration Tests (WASM)
-
-The `flux-wasm` crate includes integration tests that compile Flux code to WASM and execute it with wasmtime:
-```bash
-cd crates/flux-wasm
-cargo test
-```
-
-Tests include:
-- Core WASM module tests (legacy format)
-- Component Model tests (default format)
-- Temporal type support tests
-
-## Architecture
-
-### Virtual File System (VFS)
-
-The VFS in `flux-sema` manages both disk-based files and in-memory "unsaved" buffers from the editor. This allows the LSP to work with unsaved changes without hitting the disk.
-
-### Standard Library
-
-The standard library is embedded as virtual files in the compiler, allowing imports like `import { Date, Time } from "std"` to work even without physical files.
-
-### Symbol Bridge
-
-The Symbol Bridge connects LSP queries to semantic information. When hovering over a variable, the LSP queries the flux-sema crate to find the specific Span and Type for that coordinate.
+These can be added incrementally as needed.
 
 ## Development
 
 ### Adding New Features
 
-1. Update the lexer in `flux-syntax/src/lexer.rs` for new tokens
-2. Update the parser in `flux-syntax/src/parser.rs` for new syntax
-3. Add snapshot tests in `flux-syntax/tests/`
-4. Update WASM codegen in `flux-wasm/src/codegen.rs`
-5. Add integration tests in `flux-wasm/tests/`
+1. **Lexer**: Add tokens in `crates/flux-syntax/src/lexer.rs`
+2. **AST**: Add node types in `crates/flux-syntax/src/ast.rs`
+3. **Parser**: Add parsing logic in `crates/flux-syntax/src/parser.rs`
+4. **Type Checking**: Update `crates/flux-sema/src/types.rs`
+5. **Code Generation**: Update `crates/flux-wasm/src/codegen.rs`
+6. **Tests**: Add tests at each level
 
-### Error Messages
+### Code Quality
 
-Flux uses `miette` for beautiful, helpful error messages with code snippets and hints. Errors are defined in `flux-errors/src/lib.rs` and can be automatically converted to LSP Diagnostic objects.
+Before committing:
+```bash
+cargo fmt --all
+cargo clippy --all-targets -- -D warnings
+cargo test
+```
 
 ## License
 
@@ -264,5 +249,6 @@ MIT License - see LICENSE file for details
 
 Contributions are welcome! Please ensure:
 - All tests pass (`cargo test`)
+- Code is formatted (`cargo fmt`)
+- No clippy warnings (`cargo clippy`)
 - New features include tests
-- Code follows Rust conventions (`cargo fmt`, `cargo clippy`)

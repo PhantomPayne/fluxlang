@@ -252,4 +252,84 @@ mod tests {
             TypeInfo::Bool
         );
     }
+
+    #[test]
+    fn test_type_error_int_plus_float() {
+        let checker = TypeChecker::new();
+        let env = TypeEnv::new();
+
+        let left = flux_syntax::Expr::Int {
+            value: 10,
+            span: flux_errors::Span::new(0, 2),
+        };
+        let right = flux_syntax::Expr::Float {
+            value: 3.5,
+            span: flux_errors::Span::new(5, 8),
+        };
+        let binary = flux_syntax::Expr::Binary {
+            op: flux_syntax::BinOp::Add,
+            left: Box::new(left),
+            right: Box::new(right),
+            span: flux_errors::Span::new(0, 8),
+        };
+
+        let result = checker.infer_expr(&binary, &env);
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            flux_errors::FluxError::TypeError { message, .. } => {
+                assert!(message.contains("Cannot apply"));
+            }
+            _ => panic!("Expected TypeError"),
+        }
+    }
+
+    #[test]
+    fn test_type_check_valid_addition() {
+        let checker = TypeChecker::new();
+        let env = TypeEnv::new();
+
+        let left = flux_syntax::Expr::Int {
+            value: 10,
+            span: flux_errors::Span::new(0, 2),
+        };
+        let right = flux_syntax::Expr::Int {
+            value: 32,
+            span: flux_errors::Span::new(5, 7),
+        };
+        let binary = flux_syntax::Expr::Binary {
+            op: flux_syntax::BinOp::Add,
+            left: Box::new(left),
+            right: Box::new(right),
+            span: flux_errors::Span::new(0, 7),
+        };
+
+        let result = checker.infer_expr(&binary, &env);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), TypeInfo::Int);
+    }
+
+    #[test]
+    fn test_type_check_let_binding() {
+        let checker = TypeChecker::new();
+        let env = TypeEnv::new();
+
+        let value = flux_syntax::Expr::Int {
+            value: 42,
+            span: flux_errors::Span::new(8, 10),
+        };
+        let body_var = flux_syntax::Expr::Var {
+            name: "x".to_string(),
+            span: flux_errors::Span::new(11, 12),
+        };
+        let let_expr = flux_syntax::Expr::Let {
+            name: "x".to_string(),
+            value: Box::new(value),
+            body: Box::new(body_var),
+            span: flux_errors::Span::new(0, 12),
+        };
+
+        let result = checker.infer_expr(&let_expr, &env);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), TypeInfo::Int);
+    }
 }
