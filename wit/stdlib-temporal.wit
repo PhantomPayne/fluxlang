@@ -1,0 +1,34 @@
+package flux:std@0.1.0;
+
+/// Temporal/time functions for the Flux standard library
+interface temporal {
+    /// Timestamp with seconds and nanoseconds since Unix epoch
+    record timestamp {
+        seconds: s64,
+        nanoseconds: u32,
+    }
+    
+    /// Duration with seconds and nanoseconds
+    record duration {
+        seconds: s64,
+        nanoseconds: u32,
+    }
+    
+    /// Get the current wall clock time as a timestamp
+    now: func() -> timestamp;
+    
+    /// Add a duration to a timestamp
+    add-duration: func(ts: timestamp, dur: duration) -> timestamp;
+    
+    /// Subtract a duration from a timestamp
+    sub-duration: func(ts: timestamp, dur: duration) -> timestamp;
+    
+    /// Format a timestamp as an ISO 8601 string (e.g., "2024-01-15T10:30:00Z")
+    format-iso8601: func(ts: timestamp) -> string;
+    
+    /// Create a duration from seconds
+    duration-from-seconds: func(seconds: s64) -> duration;
+    
+    /// Create a duration from milliseconds
+    duration-from-millis: func(millis: s64) -> duration;
+}

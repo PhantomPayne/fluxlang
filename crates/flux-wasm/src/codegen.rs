@@ -1,5 +1,5 @@
 use flux_errors::{FluxError, Result};
-use flux_syntax::{Expr, SourceFile, Type};
+use flux_syntax::{Expr, Item, SourceFile, Type};
 use std::collections::HashMap;
 use wasm_encoder::{
     CodeSection, ExportKind, ExportSection, Function, FunctionSection, Instruction, Module,
@@ -45,12 +45,120 @@ impl LocalContext {
     }
 }
 
+/// Signature of a builtin function
+#[allow(dead_code)]
+struct BuiltinSignature {
+    /// Number of parameters
+    param_count: usize,
+    /// Expected parameter types (for validation when type checking is available)
+    param_types: Vec<ValType>,
+    /// Return type
+    return_type: ValType,
+}
+
+/// Registry of builtin functions
+struct BuiltinRegistry {
+    signatures: HashMap<String, BuiltinSignature>,
+}
+
+impl BuiltinRegistry {
+    fn new() -> Self {
+        let mut signatures = HashMap::new();
+
+        // Integer math functions
+        signatures.insert(
+            "abs".to_string(),
+            BuiltinSignature {
+                param_count: 1,
+                param_types: vec![ValType::I32],
+                return_type: ValType::I32,
+            },
+        );
+        signatures.insert(
+            "max".to_string(),
+            BuiltinSignature {
+                param_count: 2,
+                param_types: vec![ValType::I32, ValType::I32],
+                return_type: ValType::I32,
+            },
+        );
+        signatures.insert(
+            "min".to_string(),
+            BuiltinSignature {
+                param_count: 2,
+                param_types: vec![ValType::I32, ValType::I32],
+                return_type: ValType::I32,
+            },
+        );
+
+        // Float math functions
+        signatures.insert(
+            "sqrt".to_string(),
+            BuiltinSignature {
+                param_count: 1,
+                param_types: vec![ValType::F64],
+                return_type: ValType::F64,
+            },
+        );
+        signatures.insert(
+            "floor".to_string(),
+            BuiltinSignature {
+                param_count: 1,
+                param_types: vec![ValType::F64],
+                return_type: ValType::F64,
+            },
+        );
+        signatures.insert(
+            "ceil".to_string(),
+            BuiltinSignature {
+                param_count: 1,
+                param_types: vec![ValType::F64],
+                return_type: ValType::F64,
+            },
+        );
+        signatures.insert(
+            "pow".to_string(),
+            BuiltinSignature {
+                param_count: 2,
+                param_types: vec![ValType::F64, ValType::F64],
+                return_type: ValType::F64,
+            },
+        );
+
+        Self { signatures }
+    }
+
+    fn get(&self, name: &str) -> Option<&BuiltinSignature> {
+        self.signatures.get(name)
+    }
+
+    fn is_builtin(&self, name: &str) -> bool {
+        self.signatures.contains_key(name)
+    }
+}
+
+/// Information about a user-defined function
+struct UserFunctionInfo {
+    /// WASM function index
+    wasm_index: u32,
+    /// Number of parameters
+    param_count: usize,
+}
+
 /// WASM code generator for Flux
-pub struct WasmCodegen {}
+pub struct WasmCodegen {
+    /// Registry of builtin functions
+    builtin_registry: BuiltinRegistry,
+    /// Map of user-defined functions
+    user_functions: HashMap<String, UserFunctionInfo>,
+}
 
 impl WasmCodegen {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            builtin_registry: BuiltinRegistry::new(),
+            user_functions: HashMap::new(),
+        }
     }
 
     /// Compile a Flux source file to a WASM component
@@ -77,53 +185,99 @@ impl WasmCodegen {
     fn compile_core_module(&mut self, ast: &SourceFile) -> Result<Vec<u8>> {
         let mut module = Module::new();
 
-        // Create type section
+        // First pass: collect all user-defined functions and assign WASM indices
+        let mut wasm_func_index = 0u32;
+        let mut function_signatures = Vec::new(); // Track signatures for each function
+
+        for item in &ast.items {
+            let Item::Function(func) = item;
+            self.user_functions.insert(
+                func.name.clone(),
+                UserFunctionInfo {
+                    wasm_index: wasm_func_index,
+                    param_count: func.params.len(),
+                },
+            );
+            // For now, all params are i32 and all returns are i32
+            function_signatures.push(func.params.len());
+            wasm_func_index += 1;
+        }
+
+        // Create type section - generate unique type signatures as needed
         let mut types = TypeSection::new();
-        // Function type: () -> i32
-        types.ty().function(vec![], vec![ValType::I32]);
+        let mut type_indices: HashMap<usize, u32> = HashMap::new();
+
+        if wasm_func_index > 0 {
+            // Generate unique type signatures for user-defined functions
+            for &param_count in &function_signatures {
+                if !type_indices.contains_key(&param_count) {
+                    let params = vec![ValType::I32; param_count];
+                    let type_idx = type_indices.len() as u32;
+                    types.ty().function(params, vec![ValType::I32]);
+                    type_indices.insert(param_count, type_idx);
+                }
+            }
+        } else {
+            // No user functions - add a default () -> i32 signature
+            types.ty().function(vec![], vec![ValType::I32]);
+            type_indices.insert(0, 0);
+        }
         module.section(&types);
 
-        // Create function section
+        // Create function section - declare all functions with proper type indices
         let mut functions = FunctionSection::new();
-        functions.function(0); // Function 0 uses type 0
+        if wasm_func_index > 0 {
+            for &param_count in &function_signatures {
+                let type_idx = type_indices[&param_count];
+                functions.function(type_idx);
+            }
+        } else {
+            // No user functions - add default function
+            functions.function(0);
+        }
         module.section(&functions);
 
-        // Create export section
+        // Create export section - export main if it exists
         let mut exports = ExportSection::new();
-        exports.export("main", ExportKind::Func, 0);
+        if let Some(main_info) = self.user_functions.get("main") {
+            exports.export("main", ExportKind::Func, main_info.wasm_index);
+        }
         module.section(&exports);
 
-        // Create code section
+        // Create code section - generate code for all functions
         let mut codes = CodeSection::new();
 
-        // Generate code for the first function's body
-        if let Some(flux_syntax::Item::Function(first_func)) = ast.items.first() {
-            let mut locals_ctx = LocalContext::new();
+        if wasm_func_index > 0 {
+            // Generate code for user-defined functions
+            for item in &ast.items {
+                let Item::Function(func) = item;
+                let mut locals_ctx = LocalContext::new();
 
-            // Add parameters as locals
-            for param in &first_func.params {
-                locals_ctx.add_param(&param.name);
+                // Add parameters as locals
+                for param in &func.params {
+                    locals_ctx.add_param(&param.name);
+                }
+
+                // Count additional locals needed for let bindings
+                let additional_locals = self.count_let_bindings(&func.body);
+
+                let func_locals = if additional_locals > 0 {
+                    vec![(additional_locals, ValType::I32)]
+                } else {
+                    vec![]
+                };
+
+                let mut wasm_func = Function::new(func_locals);
+                self.compile_expr_with_locals(&func.body, &mut locals_ctx, &mut wasm_func)?;
+                wasm_func.instruction(&Instruction::End);
+                codes.function(&wasm_func);
             }
-
-            // Count additional locals needed for let bindings
-            let additional_locals = self.count_let_bindings(&first_func.body);
-
-            let func_locals = if additional_locals > 0 {
-                vec![(additional_locals, ValType::I32)]
-            } else {
-                vec![]
-            };
-
-            let mut func = Function::new(func_locals);
-            self.compile_expr_with_locals(&first_func.body, &mut locals_ctx, &mut func)?;
-            func.instruction(&Instruction::End);
-            codes.function(&func);
         } else {
-            // Default: return 42
-            let mut func = Function::new(vec![]);
-            func.instruction(&Instruction::I32Const(42));
-            func.instruction(&Instruction::End);
-            codes.function(&func);
+            // No functions defined - add a default function that returns 42
+            let mut wasm_func = Function::new(vec![]);
+            wasm_func.instruction(&Instruction::I32Const(42));
+            wasm_func.instruction(&Instruction::End);
+            codes.function(&wasm_func);
         }
 
         module.section(&codes);
@@ -223,13 +377,216 @@ impl WasmCodegen {
                     func.instruction(&Instruction::I32Const(0));
                 }
             }
-            Expr::Call { .. } => {
-                // Function calls not yet implemented
-                return Err(FluxError::WasmError {
-                    message: "Function calls are not yet implemented".to_string(),
-                });
+            Expr::Call {
+                func: func_expr,
+                args,
+                ..
+            } => {
+                // Support only simple function calls with Var as the function name
+                if let Expr::Var { name, .. } = func_expr.as_ref() {
+                    // Check if it's a builtin function
+                    if self.builtin_registry.is_builtin(name) {
+                        self.compile_builtin_call(name, args, locals, func)?;
+                    } else if self.user_functions.contains_key(name) {
+                        // User-defined function call
+                        self.compile_user_function_call(name, args, locals, func)?;
+                    } else {
+                        return Err(FluxError::WasmError {
+                            message: format!("Unknown function: '{}'", name),
+                        });
+                    }
+                } else {
+                    return Err(FluxError::WasmError {
+                        message: "Only direct function calls are supported (e.g., abs(x))"
+                            .to_string(),
+                    });
+                }
             }
         }
+        Ok(())
+    }
+
+    /// Compile a builtin function call
+    fn compile_builtin_call(
+        &mut self,
+        name: &str,
+        args: &[Expr],
+        locals: &mut LocalContext,
+        func: &mut Function,
+    ) -> Result<()> {
+        // Get the builtin signature and validate argument count
+        let signature = self
+            .builtin_registry
+            .get(name)
+            .ok_or_else(|| FluxError::WasmError {
+                message: format!("Unknown builtin function: '{}'", name),
+            })?;
+
+        // Validate argument count
+        if args.len() != signature.param_count {
+            return Err(FluxError::WasmError {
+                message: format!(
+                    "Function '{}' expects {} argument(s), but {} were provided",
+                    name,
+                    signature.param_count,
+                    args.len()
+                ),
+            });
+        }
+
+        // Compile the function based on its name
+        // This dispatches to the actual implementation
+        match name {
+            "abs" => self.compile_abs(args, locals, func),
+            "max" => self.compile_max(args, locals, func),
+            "min" => self.compile_min(args, locals, func),
+            "sqrt" => self.compile_sqrt(args, locals, func),
+            "floor" => self.compile_floor(args, locals, func),
+            "ceil" => self.compile_ceil(args, locals, func),
+            "pow" => Err(FluxError::WasmError {
+                message: format!(
+                    "Function '{}' requires stdlib support (not yet available as intrinsic)",
+                    name
+                ),
+            }),
+            _ => Err(FluxError::WasmError {
+                message: format!("Builtin function '{}' is not implemented", name),
+            }),
+        }
+    }
+
+    /// Compile a user-defined function call
+    fn compile_user_function_call(
+        &mut self,
+        name: &str,
+        args: &[Expr],
+        locals: &mut LocalContext,
+        func: &mut Function,
+    ) -> Result<()> {
+        // Get function info and extract what we need before the loop
+        let (wasm_index, param_count) = {
+            let func_info = self
+                .user_functions
+                .get(name)
+                .ok_or_else(|| FluxError::WasmError {
+                    message: format!("Unknown function: '{}'", name),
+                })?;
+            (func_info.wasm_index, func_info.param_count)
+        };
+
+        // Validate argument count
+        if args.len() != param_count {
+            return Err(FluxError::WasmError {
+                message: format!(
+                    "Function '{}' expects {} argument(s), but {} were provided",
+                    name,
+                    param_count,
+                    args.len()
+                ),
+            });
+        }
+
+        // Compile all arguments (they'll be pushed onto the stack)
+        for arg in args {
+            self.compile_expr_with_locals(arg, locals, func)?;
+        }
+
+        // Emit a call instruction to the user-defined function
+        func.instruction(&Instruction::Call(wasm_index));
+
+        Ok(())
+    }
+
+    // Individual builtin implementations
+
+    fn compile_abs(
+        &mut self,
+        args: &[Expr],
+        locals: &mut LocalContext,
+        func: &mut Function,
+    ) -> Result<()> {
+        // abs(x) implemented as: (x >= 0) ? x : (0 - x)
+        self.compile_expr_with_locals(&args[0], locals, func)?;
+        // Duplicate x on stack
+        func.instruction(&Instruction::I32Const(0));
+        self.compile_expr_with_locals(&args[0], locals, func)?;
+        func.instruction(&Instruction::I32Sub);
+        // Stack now has: [x, 0-x]
+        self.compile_expr_with_locals(&args[0], locals, func)?;
+        func.instruction(&Instruction::I32Const(0));
+        func.instruction(&Instruction::I32GeS);
+        // Stack: [x, 0-x, x>=0]
+        func.instruction(&Instruction::Select);
+        Ok(())
+    }
+
+    fn compile_max(
+        &mut self,
+        args: &[Expr],
+        locals: &mut LocalContext,
+        func: &mut Function,
+    ) -> Result<()> {
+        // max(a,b) = (a > b) ? a : b
+        self.compile_expr_with_locals(&args[0], locals, func)?;
+        self.compile_expr_with_locals(&args[1], locals, func)?;
+        // Stack: [a, b]
+        // Duplicate both for comparison
+        self.compile_expr_with_locals(&args[0], locals, func)?;
+        self.compile_expr_with_locals(&args[1], locals, func)?;
+        func.instruction(&Instruction::I32GtS);
+        // Stack: [a, b, a>b]
+        func.instruction(&Instruction::Select);
+        Ok(())
+    }
+
+    fn compile_min(
+        &mut self,
+        args: &[Expr],
+        locals: &mut LocalContext,
+        func: &mut Function,
+    ) -> Result<()> {
+        // min(a,b) = (a < b) ? a : b
+        self.compile_expr_with_locals(&args[0], locals, func)?;
+        self.compile_expr_with_locals(&args[1], locals, func)?;
+        // Stack: [a, b]
+        self.compile_expr_with_locals(&args[0], locals, func)?;
+        self.compile_expr_with_locals(&args[1], locals, func)?;
+        func.instruction(&Instruction::I32LtS);
+        // Stack: [a, b, a<b]
+        func.instruction(&Instruction::Select);
+        Ok(())
+    }
+
+    fn compile_sqrt(
+        &mut self,
+        args: &[Expr],
+        locals: &mut LocalContext,
+        func: &mut Function,
+    ) -> Result<()> {
+        self.compile_expr_with_locals(&args[0], locals, func)?;
+        func.instruction(&Instruction::F64Sqrt);
+        Ok(())
+    }
+
+    fn compile_floor(
+        &mut self,
+        args: &[Expr],
+        locals: &mut LocalContext,
+        func: &mut Function,
+    ) -> Result<()> {
+        self.compile_expr_with_locals(&args[0], locals, func)?;
+        func.instruction(&Instruction::F64Floor);
+        Ok(())
+    }
+
+    fn compile_ceil(
+        &mut self,
+        args: &[Expr],
+        locals: &mut LocalContext,
+        func: &mut Function,
+    ) -> Result<()> {
+        self.compile_expr_with_locals(&args[0], locals, func)?;
+        func.instruction(&Instruction::F64Ceil);
         Ok(())
     }
 
