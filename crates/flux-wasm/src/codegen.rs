@@ -1,10 +1,49 @@
 use flux_errors::{FluxError, Result};
 use flux_syntax::{Expr, SourceFile, Type};
+use std::collections::HashMap;
 use wasm_encoder::{
     CodeSection, ExportKind, ExportSection, Function, FunctionSection, Instruction, Module,
     TypeSection, ValType,
 };
 use wit_component::ComponentEncoder;
+
+/// Local variable context for tracking variable indices
+struct LocalContext {
+    /// Maps variable names to local indices
+    locals: HashMap<String, u32>,
+    /// Next available local index
+    next_index: u32,
+}
+
+impl LocalContext {
+    fn new() -> Self {
+        Self {
+            locals: HashMap::new(),
+            next_index: 0,
+        }
+    }
+
+    /// Add a parameter as a local (parameters come first)
+    fn add_param(&mut self, name: &str) -> u32 {
+        let idx = self.next_index;
+        self.locals.insert(name.to_string(), idx);
+        self.next_index += 1;
+        idx
+    }
+
+    /// Add a local variable (allocated after parameters)
+    fn add_local(&mut self, name: &str) -> u32 {
+        let idx = self.next_index;
+        self.locals.insert(name.to_string(), idx);
+        self.next_index += 1;
+        idx
+    }
+
+    /// Get the index of a local variable
+    fn get(&self, name: &str) -> Option<u32> {
+        self.locals.get(name).copied()
+    }
+}
 
 /// WASM code generator for Flux
 pub struct WasmCodegen {}
@@ -14,8 +53,28 @@ impl WasmCodegen {
         Self {}
     }
 
-    /// Compile a Flux source file to WASM core module
-    pub fn compile(&mut self, ast: &SourceFile) -> Result<Vec<u8>> {
+    /// Compile a Flux source file to a WASM component
+    pub fn compile_component(&mut self, ast: &SourceFile) -> Result<Vec<u8>> {
+        // Generate the core module
+        let core_wasm = self.compile_core_module(ast)?;
+
+        // Create a component encoder
+        let encoder = ComponentEncoder::default()
+            .module(&core_wasm)
+            .map_err(|e| FluxError::WasmError {
+                message: format!("Failed to encode component: {}", e),
+            })?
+            .validate(true)
+            .encode()
+            .map_err(|e| FluxError::WasmError {
+                message: format!("Failed to finalize component: {}", e),
+            })?;
+
+        Ok(encoder)
+    }
+
+    /// Compile the core WASM module
+    fn compile_core_module(&mut self, ast: &SourceFile) -> Result<Vec<u8>> {
         let mut module = Module::new();
 
         // Create type section
@@ -36,65 +95,70 @@ impl WasmCodegen {
 
         // Create code section
         let mut codes = CodeSection::new();
-        let mut func = Function::new(vec![]);
 
-        // Generate code for the first function's body (simplified)
+        // Generate code for the first function's body
         if let Some(flux_syntax::Item::Function(first_func)) = ast.items.first() {
-            self.compile_expr(&first_func.body, &mut func)?;
+            let mut locals_ctx = LocalContext::new();
+
+            // Add parameters as locals
+            for param in &first_func.params {
+                locals_ctx.add_param(&param.name);
+            }
+
+            // Count additional locals needed for let bindings
+            let additional_locals = self.count_let_bindings(&first_func.body);
+
+            let func_locals = if additional_locals > 0 {
+                vec![(additional_locals, ValType::I32)]
+            } else {
+                vec![]
+            };
+
+            let mut func = Function::new(func_locals);
+            self.compile_expr_with_locals(&first_func.body, &mut locals_ctx, &mut func)?;
+            func.instruction(&Instruction::End);
+            codes.function(&func);
         } else {
             // Default: return 42
+            let mut func = Function::new(vec![]);
             func.instruction(&Instruction::I32Const(42));
+            func.instruction(&Instruction::End);
+            codes.function(&func);
         }
 
-        func.instruction(&Instruction::End);
-        codes.function(&func);
         module.section(&codes);
-
         Ok(module.finish())
     }
 
-    /// Compile a Flux source file to a WASM component
-    pub fn compile_component(&mut self, ast: &SourceFile) -> Result<Vec<u8>> {
-        // First generate the core module
-        let core_wasm = self.compile(ast)?;
-
-        // Create a component encoder
-        let encoder = ComponentEncoder::default()
-            .module(&core_wasm)
-            .map_err(|e| FluxError::WasmError {
-                message: format!("Failed to encode component: {}", e),
-            })?
-            .validate(true)
-            .encode()
-            .map_err(|e| FluxError::WasmError {
-                message: format!("Failed to finalize component: {}", e),
-            })?;
-
-        Ok(encoder)
-    }
-
-    /// Map a Flux type to the corresponding WIT type name
-    ///
-    /// This helper will be used when implementing the full WIT adapter layer
-    /// for binding Flux functions to component exports with proper type mapping.
-    /// Currently preserved as documentation of the type mapping strategy.
-    #[allow(dead_code)]
-    fn flux_type_to_wit_name(&self, ty: &Type) -> &'static str {
-        match ty {
-            Type::Int(_) => "s64",
-            Type::Float(_) => "f64",
-            Type::Bool(_) => "bool",
-            Type::String(_) => "string",
-            Type::Date(_) => "date",
-            Type::Time(_) => "time",
-            Type::DateTime(_) => "datetime",
-            Type::Timestamp(_) => "timestamp",
-            Type::Duration(_) => "duration",
-            Type::Named { .. } => "named",
+    /// Count let bindings to determine how many locals we need
+    fn count_let_bindings(&self, expr: &Expr) -> u32 {
+        match expr {
+            Expr::Let { value, body, .. } => {
+                1 + self.count_let_bindings(value) + self.count_let_bindings(body)
+            }
+            Expr::Binary { left, right, .. } => {
+                self.count_let_bindings(left) + self.count_let_bindings(right)
+            }
+            Expr::Call { func, args, .. } => {
+                let mut count = self.count_let_bindings(func);
+                for arg in args {
+                    count += self.count_let_bindings(arg);
+                }
+                count
+            }
+            Expr::Block { stmts, .. } => stmts.iter().map(|s| self.count_let_bindings(s)).sum(),
+            Expr::Return { value, .. } => self.count_let_bindings(value),
+            _ => 0,
         }
     }
 
-    fn compile_expr(&mut self, expr: &Expr, func: &mut Function) -> Result<()> {
+    /// Compile an expression with local variable context
+    fn compile_expr_with_locals(
+        &mut self,
+        expr: &Expr,
+        locals: &mut LocalContext,
+        func: &mut Function,
+    ) -> Result<()> {
         match expr {
             Expr::Int { value, .. } => {
                 func.instruction(&Instruction::I32Const(*value as i32));
@@ -109,11 +173,17 @@ impl WasmCodegen {
                 // Strings are not yet fully supported - return placeholder
                 func.instruction(&Instruction::I32Const(0));
             }
+            Expr::Var { name, .. } => {
+                let local_idx = locals.get(name).ok_or_else(|| FluxError::WasmError {
+                    message: format!("Undefined variable: {}", name),
+                })?;
+                func.instruction(&Instruction::LocalGet(local_idx));
+            }
             Expr::Binary {
                 op, left, right, ..
             } => {
-                self.compile_expr(left, func)?;
-                self.compile_expr(right, func)?;
+                self.compile_expr_with_locals(left, locals, func)?;
+                self.compile_expr_with_locals(right, locals, func)?;
                 match op {
                     flux_syntax::BinOp::Add => {
                         func.instruction(&Instruction::I32Add);
@@ -127,26 +197,56 @@ impl WasmCodegen {
                     flux_syntax::BinOp::Div => {
                         func.instruction(&Instruction::I32DivS);
                     }
-                    _ => {
-                        return Err(FluxError::WasmError {
-                            message: "Unsupported binary operation".to_string(),
-                        });
-                    }
                 }
+            }
+            Expr::Let {
+                name, value, body, ..
+            } => {
+                // Compile the value
+                self.compile_expr_with_locals(value, locals, func)?;
+
+                // Allocate a local and store
+                let local_idx = locals.add_local(name);
+                func.instruction(&Instruction::LocalSet(local_idx));
+
+                // Compile the body
+                self.compile_expr_with_locals(body, locals, func)?;
+            }
+            Expr::Return { value, .. } => {
+                self.compile_expr_with_locals(value, locals, func)?;
+                func.instruction(&Instruction::Return);
             }
             Expr::Block { stmts, .. } => {
                 if let Some(last) = stmts.last() {
-                    self.compile_expr(last, func)?;
+                    self.compile_expr_with_locals(last, locals, func)?;
                 } else {
                     func.instruction(&Instruction::I32Const(0));
                 }
             }
-            _ => {
-                // Unsupported expression - return 0
-                func.instruction(&Instruction::I32Const(0));
+            Expr::Call { .. } => {
+                // Function calls not yet implemented
+                return Err(FluxError::WasmError {
+                    message: "Function calls are not yet implemented".to_string(),
+                });
             }
         }
         Ok(())
+    }
+
+    /// Map a Flux type to the corresponding WIT type name
+    ///
+    /// This helper will be used when implementing the full WIT adapter layer
+    /// for binding Flux functions to component exports with proper type mapping.
+    /// Currently preserved as documentation of the type mapping strategy.
+    #[allow(dead_code)]
+    fn flux_type_to_wit_name(&self, ty: &Type) -> &'static str {
+        match ty {
+            Type::Int(_) => "s64",
+            Type::Float(_) => "f64",
+            Type::Bool(_) => "bool",
+            Type::String(_) => "string",
+            Type::Named { .. } => "named",
+        }
     }
 }
 
@@ -154,13 +254,6 @@ impl Default for WasmCodegen {
     fn default() -> Self {
         Self::new()
     }
-}
-
-/// Helper function to compile Flux source to WASM
-pub fn compile_to_wasm(source: &str) -> Result<Vec<u8>> {
-    let ast = flux_syntax::parse(source)?;
-    let mut codegen = WasmCodegen::new();
-    codegen.compile(&ast)
 }
 
 /// Helper function to compile Flux source to a WASM component
@@ -176,8 +269,8 @@ mod tests {
 
     #[test]
     fn test_compile_simple_function() {
-        let source = "fn main() { 42 }";
-        let result = compile_to_wasm(source);
+        let source = "fn main() { return 42 }";
+        let result = compile_to_component(source);
         assert!(result.is_ok());
         let wasm = result.unwrap();
         assert!(!wasm.is_empty());
@@ -185,8 +278,8 @@ mod tests {
 
     #[test]
     fn test_compile_addition() {
-        let source = "fn main() { 10 + 32 }";
-        let result = compile_to_wasm(source);
+        let source = "fn main() { return 10 + 32 }";
+        let result = compile_to_component(source);
         assert!(result.is_ok());
     }
 }

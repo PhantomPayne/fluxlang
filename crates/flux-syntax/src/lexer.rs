@@ -9,16 +9,8 @@ pub enum TokenKind {
     KwFn,
     #[token("let")]
     KwLet,
-    #[token("if")]
-    KwIf,
-    #[token("else")]
-    KwElse,
     #[token("return")]
     KwReturn,
-    #[token("import")]
-    KwImport,
-    #[token("from")]
-    KwFrom,
     #[token("export")]
     KwExport,
 
@@ -33,21 +25,8 @@ pub enum TokenKind {
     TyFloat,
     #[token("Project")]
     TyProject,
-    // Temporal types
-    #[token("Date")]
-    TyDate,
-    #[token("Time")]
-    TyTime,
-    #[token("DateTime")]
-    TyDateTime,
-    #[token("Timestamp")]
-    TyTimestamp,
-    #[token("Duration")]
-    TyDuration,
 
     // Operators
-    #[token("|>")]
-    OpPipe,
     #[token("->")]
     OpArrow,
     #[token("=")]
@@ -60,10 +39,6 @@ pub enum TokenKind {
     OpStar,
     #[token("/")]
     OpSlash,
-    #[token("<")]
-    OpLt,
-    #[token(">")]
-    OpGt,
 
     // Delimiters
     #[token("(")]
@@ -96,8 +71,6 @@ pub enum TokenKind {
     LitFalse,
     #[regex(r#""([^"\\]|\\["\\bnfrt]|u[a-fA-F0-9]{4})*""#)]
     LitString,
-    #[regex(r"#[a-zA-Z_][a-zA-Z0-9_]*")]
-    LitLabel,
 
     // Identifiers
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*")]
@@ -150,33 +123,11 @@ mod tests {
 
     #[test]
     fn test_tokenize_keywords() {
-        let input = "fn let if else return";
+        let input = "fn let return";
         let tokens = tokenize(input);
         assert_eq!(tokens[0].kind, TokenKind::KwFn);
         assert_eq!(tokens[1].kind, TokenKind::KwLet);
-        assert_eq!(tokens[2].kind, TokenKind::KwIf);
-        assert_eq!(tokens[3].kind, TokenKind::KwElse);
-        assert_eq!(tokens[4].kind, TokenKind::KwReturn);
-    }
-
-    #[test]
-    fn test_tokenize_pipe_operator() {
-        let input = "x |> f |> g";
-        let tokens = tokenize(input);
-        assert_eq!(tokens[0].kind, TokenKind::Ident);
-        assert_eq!(tokens[1].kind, TokenKind::OpPipe);
-        assert_eq!(tokens[2].kind, TokenKind::Ident);
-        assert_eq!(tokens[3].kind, TokenKind::OpPipe);
-    }
-
-    #[test]
-    fn test_tokenize_label() {
-        let input = "#primary #secondary_label";
-        let tokens = tokenize(input);
-        assert_eq!(tokens[0].kind, TokenKind::LitLabel);
-        assert_eq!(tokens[0].text, "#primary");
-        assert_eq!(tokens[1].kind, TokenKind::LitLabel);
-        assert_eq!(tokens[1].text, "#secondary_label");
+        assert_eq!(tokens[2].kind, TokenKind::KwReturn);
     }
 
     #[test]

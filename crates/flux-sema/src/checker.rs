@@ -41,9 +41,6 @@ impl<'a> SemanticChecker<'a> {
         for item in &source_file.items {
             match item {
                 Item::Function(func) => self.check_function(func),
-                Item::Import(_) => {
-                    // Imports don't need semantic checking for now
-                }
             }
         }
     }
@@ -82,10 +79,6 @@ impl<'a> SemanticChecker<'a> {
                 self.check_expr_with_scope(left, scope);
                 self.check_expr_with_scope(right, scope);
             }
-            Expr::Pipeline { left, right, .. } => {
-                self.check_expr_with_scope(left, scope);
-                self.check_expr_with_scope(right, scope);
-            }
             Expr::Let {
                 name, value, body, ..
             } => {
@@ -99,17 +92,8 @@ impl<'a> SemanticChecker<'a> {
                 // Check the body with the extended scope
                 self.check_expr_with_scope(body, &new_scope);
             }
-            Expr::If {
-                cond,
-                then_branch,
-                else_branch,
-                ..
-            } => {
-                self.check_expr_with_scope(cond, scope);
-                self.check_expr_with_scope(then_branch, scope);
-                if let Some(else_branch) = else_branch {
-                    self.check_expr_with_scope(else_branch, scope);
-                }
+            Expr::Return { value, .. } => {
+                self.check_expr_with_scope(value, scope);
             }
             Expr::Block { stmts, .. } => {
                 // Check each statement in the block
@@ -118,11 +102,7 @@ impl<'a> SemanticChecker<'a> {
                 }
             }
             // Literals don't need checking
-            Expr::Int { .. }
-            | Expr::Float { .. }
-            | Expr::Bool { .. }
-            | Expr::String { .. }
-            | Expr::Label { .. } => {}
+            Expr::Int { .. } | Expr::Float { .. } | Expr::Bool { .. } | Expr::String { .. } => {}
         }
     }
 }
@@ -137,7 +117,7 @@ mod tests {
     fn test_undefined_variable_detected() {
         let source = r#"
             fn test() -> int {
-                unknown_var
+                return unknown_var
             }
         "#;
 
@@ -163,7 +143,7 @@ mod tests {
     fn test_defined_parameter_not_error() {
         let source = r#"
             fn test(data: int) -> int {
-                data
+                return data
             }
         "#;
 
@@ -183,7 +163,7 @@ mod tests {
     fn test_multiple_undefined_variables() {
         let source = r#"
             fn test() -> int {
-                unknown1 + unknown2
+                return unknown1 + unknown2
             }
         "#;
 
@@ -204,7 +184,7 @@ mod tests {
         // Note: Flux's let syntax is `let x = value body` without an 'in' keyword
         let source = r#"
             fn test() -> int {
-                let x = 5 x
+                let x = 5 return x
             }
         "#;
 

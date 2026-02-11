@@ -30,30 +30,35 @@ Ok(
                     ),
                     body: Block {
                         stmts: [
-                            Var {
-                                name: "ctx",
+                            Return {
+                                value: Var {
+                                    name: "ctx",
+                                    span: Span {
+                                        start: 40,
+                                        end: 43,
+                                    },
+                                },
                                 span: Span {
                                     start: 33,
-                                    end: 36,
+                                    end: 43,
                                 },
                             },
                         ],
                         span: Span {
                             start: 31,
-                            end: 38,
+                            end: 45,
                         },
                     },
-                    labels: [],
                     span: Span {
                         start: 7,
-                        end: 38,
+                        end: 45,
                     },
                 },
             ),
         ],
         span: Span {
             start: 0,
-            end: 38,
+            end: 45,
         },
     },
 )

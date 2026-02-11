@@ -2,102 +2,57 @@ use flux_syntax::parse;
 
 #[test]
 fn test_parse_simple_function() {
-    let input = r#"fn add(x: int, y: int) -> int { x + y }"#;
-    let result = parse(input);
-    insta::assert_debug_snapshot!(result);
-}
-
-#[test]
-fn test_parse_pipeline_operator() {
-    let input = r#"fn process(data) { data |> filter |> map |> reduce }"#;
-    let result = parse(input);
-    insta::assert_debug_snapshot!(result);
-}
-
-#[test]
-fn test_parse_label_literals() {
-    let input = r#"fn tagged() { #primary }"#;
+    let input = r#"fn add(x: int, y: int) -> int { return x + y }"#;
     let result = parse(input);
     insta::assert_debug_snapshot!(result);
 }
 
 #[test]
 fn test_parse_bool_float_types() {
-    let input = r#"fn process(flag: bool, value: float) -> int { 42 }"#;
+    let input = r#"fn process(flag: bool, value: float) -> int { return 42 }"#;
     let result = parse(input);
     insta::assert_debug_snapshot!(result);
 }
 
 #[test]
 fn test_parse_plan_skeleton() {
-    let input = r#"export fn plan(ctx) -> Project { ctx }"#;
-    let result = parse(input);
-    insta::assert_debug_snapshot!(result);
-}
-
-#[test]
-fn test_parse_import_statement() {
-    let input = r#"import { Date, Time } from "std""#;
-    let result = parse(input);
-    insta::assert_debug_snapshot!(result);
-}
-
-#[test]
-fn test_parse_complex_pipeline() {
-    let input = r#"
-fn analyze(value: int) -> int {
-    value |> filter(#active) |> sum
-}
-"#;
+    let input = r#"export fn plan(ctx) -> Project { return ctx }"#;
     let result = parse(input);
     insta::assert_debug_snapshot!(result);
 }
 
 #[test]
 fn test_parse_nested_expressions() {
-    let input = r#"fn calc() { (1 + 2) * (3 + 4) }"#;
-    let result = parse(input);
-    insta::assert_debug_snapshot!(result);
-}
-
-#[test]
-fn test_parse_temporal_types_date() {
-    let input = r#"fn get_birth_date() -> Date { 0 }"#;
-    let result = parse(input);
-    insta::assert_debug_snapshot!(result);
-}
-
-#[test]
-fn test_parse_temporal_types_time() {
-    let input = r#"fn get_meeting_time() -> Time { 0 }"#;
-    let result = parse(input);
-    insta::assert_debug_snapshot!(result);
-}
-
-#[test]
-fn test_parse_temporal_types_datetime() {
-    let input = r#"fn schedule_event(local_time: DateTime) -> DateTime { local_time }"#;
-    let result = parse(input);
-    insta::assert_debug_snapshot!(result);
-}
-
-#[test]
-fn test_parse_temporal_types_timestamp() {
-    let input = r#"fn log_event() -> Timestamp { 0 }"#;
-    let result = parse(input);
-    insta::assert_debug_snapshot!(result);
-}
-
-#[test]
-fn test_parse_temporal_types_duration() {
-    let input = r#"fn calculate_elapsed(start: Timestamp, end: Timestamp) -> Duration { 0 }"#;
+    let input = r#"fn calc() { return (1 + 2) * (3 + 4) }"#;
     let result = parse(input);
     insta::assert_debug_snapshot!(result);
 }
 
 #[test]
 fn test_parse_bool_float_literals() {
-    let input = r#"fn test() { true } fn test2() { false } fn test3() { 3.14 }"#;
+    let input =
+        r#"fn test() { return true } fn test2() { return false } fn test3() { return 3.14 }"#;
+    let result = parse(input);
+    insta::assert_debug_snapshot!(result);
+}
+
+#[test]
+fn test_parse_let_binding() {
+    let input = r#"fn test() -> int { let x = 10 return x + 32 }"#;
+    let result = parse(input);
+    insta::assert_debug_snapshot!(result);
+}
+
+#[test]
+fn test_parse_function_call() {
+    let input = r#"fn main() -> int { return add(1, 2) }"#;
+    let result = parse(input);
+    insta::assert_debug_snapshot!(result);
+}
+
+#[test]
+fn test_parse_block() {
+    let input = r#"fn test() -> int { { return 42 } }"#;
     let result = parse(input);
     insta::assert_debug_snapshot!(result);
 }

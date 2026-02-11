@@ -1,0 +1,76 @@
+---
+source: crates/flux-syntax/tests/parser_tests.rs
+expression: result
+---
+Ok(
+    SourceFile {
+        items: [
+            Function(
+                Function {
+                    is_export: false,
+                    name: "main",
+                    params: [],
+                    return_type: Some(
+                        Int(
+                            Span {
+                                start: 13,
+                                end: 16,
+                            },
+                        ),
+                    ),
+                    body: Block {
+                        stmts: [
+                            Return {
+                                value: Call {
+                                    func: Var {
+                                        name: "add",
+                                        span: Span {
+                                            start: 26,
+                                            end: 29,
+                                        },
+                                    },
+                                    args: [
+                                        Int {
+                                            value: 1,
+                                            span: Span {
+                                                start: 30,
+                                                end: 31,
+                                            },
+                                        },
+                                        Int {
+                                            value: 2,
+                                            span: Span {
+                                                start: 33,
+                                                end: 34,
+                                            },
+                                        },
+                                    ],
+                                    span: Span {
+                                        start: 26,
+                                        end: 35,
+                                    },
+                                },
+                                span: Span {
+                                    start: 19,
+                                    end: 35,
+                                },
+                            },
+                        ],
+                        span: Span {
+                            start: 17,
+                            end: 37,
+                        },
+                    },
+                    span: Span {
+                        start: 0,
+                        end: 37,
+                    },
+                },
+            ),
+        ],
+        span: Span {
+            start: 0,
+            end: 37,
+        },
+    },
+)

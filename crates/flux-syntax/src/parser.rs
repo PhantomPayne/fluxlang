@@ -79,15 +79,6 @@ impl Parser {
 
         match self.current().kind {
             TokenKind::KwFn => Ok(Item::Function(self.parse_function(is_export)?)),
-            TokenKind::KwImport => {
-                if is_export {
-                    return Err(FluxError::Syntax {
-                        message: "Cannot export import statement".to_string(),
-                        span: self.current().span.to_source_span(),
-                    });
-                }
-                Ok(Item::Import(self.parse_import()?))
-            }
             _ => Err(FluxError::Syntax {
                 message: format!("Expected item, found {:?}", self.current().kind),
                 span: self.current().span.to_source_span(),
@@ -132,7 +123,6 @@ impl Parser {
             params,
             return_type,
             body,
-            labels: Vec::new(),
             span: Span::new(start, end),
         })
     }
@@ -161,37 +151,6 @@ impl Parser {
         })
     }
 
-    fn parse_import(&mut self) -> Result<Import> {
-        let start = self.current().span.start;
-        self.expect(TokenKind::KwImport)?;
-
-        self.expect(TokenKind::LBrace)?;
-        let mut items = Vec::new();
-
-        while self.current().kind != TokenKind::RBrace {
-            let ident = self.expect(TokenKind::Ident)?;
-            items.push(ident.text.clone());
-            if self.current().kind == TokenKind::Comma {
-                self.advance();
-            } else {
-                break;
-            }
-        }
-
-        self.expect(TokenKind::RBrace)?;
-        self.expect(TokenKind::KwFrom)?;
-
-        let module_token = self.expect(TokenKind::LitString)?;
-        let module = module_token.text.trim_matches('"').to_string();
-        let end = module_token.span.end;
-
-        Ok(Import {
-            items,
-            module,
-            span: Span::new(start, end),
-        })
-    }
-
     fn parse_type(&mut self) -> Result<Type> {
         let token = self.current().clone();
         match token.kind {
@@ -211,26 +170,6 @@ impl Parser {
                 self.advance();
                 Ok(Type::Float(token.span))
             }
-            TokenKind::TyDate => {
-                self.advance();
-                Ok(Type::Date(token.span))
-            }
-            TokenKind::TyTime => {
-                self.advance();
-                Ok(Type::Time(token.span))
-            }
-            TokenKind::TyDateTime => {
-                self.advance();
-                Ok(Type::DateTime(token.span))
-            }
-            TokenKind::TyTimestamp => {
-                self.advance();
-                Ok(Type::Timestamp(token.span))
-            }
-            TokenKind::TyDuration => {
-                self.advance();
-                Ok(Type::Duration(token.span))
-            }
             TokenKind::Ident | TokenKind::TyProject => {
                 let name = token.text.clone();
                 self.advance();
@@ -247,25 +186,7 @@ impl Parser {
     }
 
     fn parse_expr(&mut self) -> Result<Expr> {
-        self.parse_pipeline()
-    }
-
-    fn parse_pipeline(&mut self) -> Result<Expr> {
-        let mut left = self.parse_let()?;
-
-        while self.current().kind == TokenKind::OpPipe {
-            let start = left.span().start;
-            self.advance();
-            let right = self.parse_let()?;
-            let end = right.span().end;
-            left = Expr::Pipeline {
-                left: Box::new(left),
-                right: Box::new(right),
-                span: Span::new(start, end),
-            };
-        }
-
-        Ok(left)
+        self.parse_let()
     }
 
     fn parse_let(&mut self) -> Result<Expr> {
@@ -288,65 +209,20 @@ impl Parser {
                 body,
                 span: Span::new(start, end),
             })
-        } else {
-            self.parse_if()
-        }
-    }
-
-    fn parse_if(&mut self) -> Result<Expr> {
-        if self.current().kind == TokenKind::KwIf {
+        } else if self.current().kind == TokenKind::KwReturn {
             let start = self.current().span.start;
             self.advance();
 
-            let cond = Box::new(self.parse_comparison()?);
-            let then_branch = Box::new(self.parse_comparison()?);
+            let value = Box::new(self.parse_additive()?);
+            let end = value.span().end;
 
-            let else_branch = if self.current().kind == TokenKind::KwElse {
-                self.advance();
-                Some(Box::new(self.parse_comparison()?))
-            } else {
-                None
-            };
-
-            let end = else_branch
-                .as_ref()
-                .map(|e| e.span().end)
-                .unwrap_or_else(|| then_branch.span().end);
-
-            Ok(Expr::If {
-                cond,
-                then_branch,
-                else_branch,
+            Ok(Expr::Return {
+                value,
                 span: Span::new(start, end),
             })
         } else {
-            self.parse_comparison()
+            self.parse_additive()
         }
-    }
-
-    fn parse_comparison(&mut self) -> Result<Expr> {
-        let mut left = self.parse_additive()?;
-
-        while matches!(self.current().kind, TokenKind::OpLt | TokenKind::OpGt) {
-            let start = left.span().start;
-            let op = match self.current().kind {
-                TokenKind::OpLt => BinOp::Lt,
-                TokenKind::OpGt => BinOp::Gt,
-                _ => unreachable!(),
-            };
-            self.advance();
-            let right = self.parse_additive()?;
-            let end = right.span().end;
-
-            left = Expr::Binary {
-                op,
-                left: Box::new(left),
-                right: Box::new(right),
-                span: Span::new(start, end),
-            };
-        }
-
-        Ok(left)
     }
 
     fn parse_additive(&mut self) -> Result<Expr> {
@@ -468,13 +344,6 @@ impl Parser {
                     span: token.span,
                 })
             }
-            TokenKind::LitLabel => {
-                self.advance();
-                Ok(Expr::Label {
-                    name: token.text.clone(),
-                    span: token.span,
-                })
-            }
             TokenKind::Ident => {
                 self.advance();
                 Ok(Expr::Var {
@@ -525,7 +394,7 @@ mod tests {
 
     #[test]
     fn test_parse_function() {
-        let input = "fn add(x: int, y: int) -> int { x + y }";
+        let input = "fn add(x: int, y: int) -> int { return x + y }";
         let result = parse(input);
         assert!(result.is_ok());
         let ast = result.unwrap();
@@ -533,36 +402,21 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_pipeline() {
-        let input = "fn test() { x |> f |> g }";
-        let result = parse(input);
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_parse_label() {
-        let input = "fn test() { #primary }";
-        let result = parse(input);
-        assert!(result.is_ok());
-    }
-
-    #[test]
     fn test_parse_bool_float_types() {
-        let input = "fn test(flag: bool, value: float) -> int { 42 }";
+        let input = "fn test(flag: bool, value: float) -> int { return 42 }";
         let result = parse(input);
         assert!(result.is_ok());
     }
 
     #[test]
     fn test_parse_plan_skeleton() {
-        let input = "export fn plan(ctx) -> Project { ctx }";
+        let input = "export fn plan(ctx) -> Project { return ctx }";
         let result = parse(input);
         assert!(result.is_ok());
         let ast = result.unwrap();
         assert_eq!(ast.items.len(), 1);
-        if let Item::Function(func) = &ast.items[0] {
-            assert!(func.is_export);
-            assert_eq!(func.name, "plan");
-        }
+        let Item::Function(func) = &ast.items[0];
+        assert!(func.is_export);
+        assert_eq!(func.name, "plan");
     }
 }
