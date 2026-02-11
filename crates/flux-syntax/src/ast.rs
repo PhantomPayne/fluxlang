@@ -58,12 +58,23 @@ pub enum Type {
     String(Span),
     Table { element: Box<Type>, span: Span },
     Named { name: String, span: Span },
+    // Temporal types
+    Date(Span),
+    Time(Span),
+    DateTime(Span),
+    Timestamp(Span),
+    Duration(Span),
 }
 
 impl Type {
     pub fn span(&self) -> Span {
         match self {
             Type::Int(s) | Type::String(s) => *s,
+            Type::Date(s)
+            | Type::Time(s)
+            | Type::DateTime(s)
+            | Type::Timestamp(s)
+            | Type::Duration(s) => *s,
             Type::Table { span, .. } | Type::Named { span, .. } => *span,
         }
     }

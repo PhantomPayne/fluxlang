@@ -203,6 +203,26 @@ impl Parser {
                 self.advance();
                 Ok(Type::String(token.span))
             }
+            TokenKind::TyDate => {
+                self.advance();
+                Ok(Type::Date(token.span))
+            }
+            TokenKind::TyTime => {
+                self.advance();
+                Ok(Type::Time(token.span))
+            }
+            TokenKind::TyDateTime => {
+                self.advance();
+                Ok(Type::DateTime(token.span))
+            }
+            TokenKind::TyTimestamp => {
+                self.advance();
+                Ok(Type::Timestamp(token.span))
+            }
+            TokenKind::TyDuration => {
+                self.advance();
+                Ok(Type::Duration(token.span))
+            }
             TokenKind::TyTable => {
                 let start = token.span.start;
                 self.advance();

@@ -59,3 +59,45 @@ fn test_parse_nested_expressions() {
     let result = parse(input);
     insta::assert_debug_snapshot!(result);
 }
+
+#[test]
+fn test_parse_temporal_types_date() {
+    let input = r#"fn get_birth_date() -> Date { 0 }"#;
+    let result = parse(input);
+    insta::assert_debug_snapshot!(result);
+}
+
+#[test]
+fn test_parse_temporal_types_time() {
+    let input = r#"fn get_meeting_time() -> Time { 0 }"#;
+    let result = parse(input);
+    insta::assert_debug_snapshot!(result);
+}
+
+#[test]
+fn test_parse_temporal_types_datetime() {
+    let input = r#"fn schedule_event(local_time: DateTime) -> DateTime { local_time }"#;
+    let result = parse(input);
+    insta::assert_debug_snapshot!(result);
+}
+
+#[test]
+fn test_parse_temporal_types_timestamp() {
+    let input = r#"fn log_event() -> Timestamp { 0 }"#;
+    let result = parse(input);
+    insta::assert_debug_snapshot!(result);
+}
+
+#[test]
+fn test_parse_temporal_types_duration() {
+    let input = r#"fn calculate_elapsed(start: Timestamp, end: Timestamp) -> Duration { 0 }"#;
+    let result = parse(input);
+    insta::assert_debug_snapshot!(result);
+}
+
+#[test]
+fn test_parse_temporal_types_table() {
+    let input = r#"fn get_dates(dates: Table<Date>) -> Table<Timestamp> { dates }"#;
+    let result = parse(input);
+    insta::assert_debug_snapshot!(result);
+}

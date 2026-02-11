@@ -31,6 +31,17 @@ pub enum TokenKind {
     TyTable,
     #[token("Project")]
     TyProject,
+    // Temporal types
+    #[token("Date")]
+    TyDate,
+    #[token("Time")]
+    TyTime,
+    #[token("DateTime")]
+    TyDateTime,
+    #[token("Timestamp")]
+    TyTimestamp,
+    #[token("Duration")]
+    TyDuration,
 
     // Operators
     #[token("|>")]
