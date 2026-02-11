@@ -6,7 +6,8 @@ Flux is a functional, columnar-first language that targets WebAssembly (WASM).
 
 - **Pipeline Operator (`|>`)**: Chain operations in a readable, left-to-right flow
 - **Structural Labels (`#label`)**: Metadata and annotations on types and functions
-- **Strong Type System**: Built-in types including `int`, `string`, and `Table<T>`
+- **Strong Type System**: Built-in types including `int`, `string`, `Table<T>`, and comprehensive temporal types
+- **Temporal Types**: First-class support for `Date`, `Time`, `DateTime`, `Timestamp`, and `Duration`
 - **WASM Target**: Compile directly to WebAssembly for portable execution
 - **LSP Support**: Full language server with hover, completion, and diagnostics
 
@@ -111,6 +112,44 @@ fn tagged() {
     #secondary_label
 }
 ```
+
+### Temporal Types
+
+Flux includes comprehensive temporal types for robust time handling:
+
+```flux
+// Calendar date only (YYYY-MM-DD)
+fn get_birth_date() -> Date {
+    return Date(1990, 6, 15)
+}
+
+// Time of day only (HH:mm:ss)
+fn get_meeting_time() -> Time {
+    return Time(14, 30, 0)
+}
+
+// Date + time + timezone (always with timezone)
+fn schedule_event(local_time: DateTime) -> DateTime {
+    return local_time
+}
+
+// Absolute UTC time for events/logs
+fn log_event() -> Timestamp {
+    return now()
+}
+
+// Unified duration supporting all time units
+fn calculate_elapsed(start: Timestamp, end: Timestamp) -> Duration {
+    return end - start
+}
+```
+
+**Temporal Type Selection Guide:**
+- Use `Date` for dates without time-of-day (birthdays, anniversaries)
+- Use `Time` for time-of-day without date (schedules, recurring times)
+- Use `DateTime` for user-facing times with timezone (event scheduling, display)
+- Use `Timestamp` for absolute time points (event logs, causality, ordering)
+- Use `Duration` for time intervals (elapsed time, time arithmetic)
 
 ## Testing
 
