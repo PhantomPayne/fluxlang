@@ -24,3 +24,15 @@ target
 editors/vscode/node_modules/
 editors/vscode/out/
 editors/vscode/.vscode-test/
+editors/vscode/dist/
+editors/vscode/*.vsix
+
+# General editor and OS artifacts
+.DS_Store
+.idea/
+*.swp
+*.swo
+*~
+.vscode/
+!.vscode/extensions.json
+!.vscode/launch.json
