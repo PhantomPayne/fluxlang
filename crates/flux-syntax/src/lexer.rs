@@ -111,7 +111,7 @@ pub fn tokenize(input: &str) -> Vec<Token> {
         let text = lexer.slice().to_string();
         let span_range = lexer.span();
         let span = flux_errors::Span::new(span_range.start, span_range.end);
-        
+
         tokens.push(Token { kind, text, span });
     }
 

@@ -1,10 +1,14 @@
+use crate::SymbolTable;
 use flux_errors::FluxError;
 use flux_syntax::{Expr, Function, Item, SourceFile};
-use crate::SymbolTable;
 use std::collections::HashSet;
 
 /// Check a source file for semantic errors
-pub fn check_semantics(ast: &SourceFile, symbol_table: &SymbolTable, file_id: crate::FileId) -> Vec<FluxError> {
+pub fn check_semantics(
+    ast: &SourceFile,
+    symbol_table: &SymbolTable,
+    file_id: crate::FileId,
+) -> Vec<FluxError> {
     let mut checker = SemanticChecker::new(symbol_table, file_id);
     checker.check_source_file(ast);
     checker.errors
@@ -68,7 +72,7 @@ impl<'a> SemanticChecker<'a> {
             Expr::Call { func, args, .. } => {
                 // Check the function expression
                 self.check_expr_with_scope(func, scope);
-                
+
                 // Check all arguments
                 for arg in args {
                     self.check_expr_with_scope(arg, scope);
@@ -82,18 +86,25 @@ impl<'a> SemanticChecker<'a> {
                 self.check_expr_with_scope(left, scope);
                 self.check_expr_with_scope(right, scope);
             }
-            Expr::Let { name, value, body, .. } => {
+            Expr::Let {
+                name, value, body, ..
+            } => {
                 // Check the value expression with current scope
                 self.check_expr_with_scope(value, scope);
-                
+
                 // Create a new scope with the let-bound variable
                 let mut new_scope = scope.clone();
                 new_scope.insert(name.clone());
-                
+
                 // Check the body with the extended scope
                 self.check_expr_with_scope(body, &new_scope);
             }
-            Expr::If { cond, then_branch, else_branch, .. } => {
+            Expr::If {
+                cond,
+                then_branch,
+                else_branch,
+                ..
+            } => {
                 self.check_expr_with_scope(cond, scope);
                 self.check_expr_with_scope(then_branch, scope);
                 if let Some(else_branch) = else_branch {
@@ -115,8 +126,8 @@ impl<'a> SemanticChecker<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{FileId, SymbolBridge};
     use flux_syntax::parse;
-    use crate::{SymbolBridge, FileId};
 
     #[test]
     fn test_undefined_variable_detected() {
@@ -128,10 +139,10 @@ mod tests {
 
         let ast = parse(source).unwrap();
         let file_id = FileId(1);
-        
+
         let symbol_bridge = SymbolBridge::new();
         symbol_bridge.analyze_file(file_id, &ast);
-        
+
         let symbol_table = symbol_bridge.symbol_table();
         let errors = check_semantics(&ast, symbol_table, file_id);
 
@@ -154,10 +165,10 @@ mod tests {
 
         let ast = parse(source).unwrap();
         let file_id = FileId(1);
-        
+
         let symbol_bridge = SymbolBridge::new();
         symbol_bridge.analyze_file(file_id, &ast);
-        
+
         let symbol_table = symbol_bridge.symbol_table();
         let errors = check_semantics(&ast, symbol_table, file_id);
 
@@ -174,10 +185,10 @@ mod tests {
 
         let ast = parse(source).unwrap();
         let file_id = FileId(1);
-        
+
         let symbol_bridge = SymbolBridge::new();
         symbol_bridge.analyze_file(file_id, &ast);
-        
+
         let symbol_table = symbol_bridge.symbol_table();
         let errors = check_semantics(&ast, symbol_table, file_id);
 
@@ -195,10 +206,10 @@ mod tests {
 
         let ast = parse(source).unwrap();
         let file_id = FileId(1);
-        
+
         let symbol_bridge = SymbolBridge::new();
         symbol_bridge.analyze_file(file_id, &ast);
-        
+
         let symbol_table = symbol_bridge.symbol_table();
         let errors = check_semantics(&ast, symbol_table, file_id);
 

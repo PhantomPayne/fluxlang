@@ -31,17 +31,17 @@ impl FluxLanguageServer {
                 Ok(ast) => {
                     // Analyze symbols first
                     self.symbol_bridge.analyze_file(file_id, &ast);
-                    
+
                     // Run semantic checks
                     let symbol_table = self.symbol_bridge.symbol_table();
                     let errors = check_semantics(&ast, symbol_table, file_id);
-                    
+
                     // Convert errors to diagnostics
                     let diagnostics: Vec<Diagnostic> = errors
                         .iter()
                         .map(|e| flux_error_to_diagnostic(e, &file_data.content))
                         .collect();
-                    
+
                     // Publish diagnostics
                     if let Some(uri) = self.file_id_to_uri(file_id) {
                         let client = self.client.clone();
@@ -90,14 +90,16 @@ impl LanguageServer for FluxLanguageServer {
                     trigger_characters: Some(vec![".".to_string(), ":".to_string()]),
                     ..Default::default()
                 }),
-                diagnostic_provider: Some(DiagnosticServerCapabilities::Options(DiagnosticOptions {
-                    identifier: Some("flux-lsp".to_string()),
-                    inter_file_dependencies: false,
-                    workspace_diagnostics: false,
-                    work_done_progress_options: WorkDoneProgressOptions {
-                        work_done_progress: None,
+                diagnostic_provider: Some(DiagnosticServerCapabilities::Options(
+                    DiagnosticOptions {
+                        identifier: Some("flux-lsp".to_string()),
+                        inter_file_dependencies: false,
+                        workspace_diagnostics: false,
+                        work_done_progress_options: WorkDoneProgressOptions {
+                            work_done_progress: None,
+                        },
                     },
-                })),
+                )),
                 ..Default::default()
             },
         })
@@ -180,14 +182,11 @@ impl LanguageServer for FluxLanguageServer {
 
 fn position_to_offset(content: &str, position: Position) -> usize {
     let mut offset = 0;
-    let mut current_line = 0;
-
-    for line in content.lines() {
+    for (current_line, line) in content.lines().enumerate() {
         if current_line == position.line as usize {
             return offset + position.character as usize;
         }
         offset += line.len() + 1; // +1 for newline
-        current_line += 1;
     }
 
     offset
@@ -199,15 +198,23 @@ fn flux_error_to_diagnostic(error: &FluxError, content: &str) -> Diagnostic {
         FluxError::Syntax { message, span } => (span, message.clone(), "flux::syntax"),
         FluxError::TypeError { message, span } => (span, message.clone(), "flux::type_error"),
         FluxError::Semantic { message, span } => (span, message.clone(), "flux::semantic"),
-        FluxError::UnknownIdentifier { name, span } => {
-            (span, format!("Unknown identifier: {}", name), "flux::unknown_identifier")
-        }
+        FluxError::UnknownIdentifier { name, span } => (
+            span,
+            format!("Unknown identifier: {}", name),
+            "flux::unknown_identifier",
+        ),
         FluxError::WasmError { message } => {
             // WASM errors don't have spans, so we return a diagnostic at position 0
             return Diagnostic {
                 range: Range {
-                    start: Position { line: 0, character: 0 },
-                    end: Position { line: 0, character: 0 },
+                    start: Position {
+                        line: 0,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 0,
+                        character: 0,
+                    },
                 },
                 severity: Some(DiagnosticSeverity::ERROR),
                 code: Some(NumberOrString::String("flux::wasm".to_string())),
@@ -237,8 +244,14 @@ fn span_to_lsp_range(span: &SourceSpan, content: &str) -> Range {
     let (end_line, end_char) = offset_to_position_utf16(content, end_offset);
 
     Range {
-        start: Position { line: start_line as u32, character: start_char as u32 },
-        end: Position { line: end_line as u32, character: end_char as u32 },
+        start: Position {
+            line: start_line as u32,
+            character: start_char as u32,
+        },
+        end: Position {
+            line: end_line as u32,
+            character: end_char as u32,
+        },
     }
 }
 
@@ -252,7 +265,7 @@ fn offset_to_position_utf16(content: &str, offset: usize) -> (usize, usize) {
         if current_offset >= offset {
             break;
         }
-        
+
         if c == '\n' {
             line += 1;
             character = 0;
@@ -261,7 +274,7 @@ fn offset_to_position_utf16(content: &str, offset: usize) -> (usize, usize) {
             // Count UTF-16 code units for this character
             character += c.len_utf16();
         }
-        
+
         current_offset += c.len_utf8();
     }
 
@@ -273,7 +286,7 @@ async fn main() {
     let stdin = tokio::io::stdin();
     let stdout = tokio::io::stdout();
 
-    let (service, socket) = LspService::new(|client| FluxLanguageServer::new(client));
+    let (service, socket) = LspService::new(FluxLanguageServer::new);
 
     Server::new(stdin, stdout, socket).serve(service).await;
 }

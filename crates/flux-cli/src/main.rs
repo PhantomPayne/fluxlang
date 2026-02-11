@@ -76,7 +76,7 @@ Examples:
 
 fn parse_file(path: &str) -> Result<()> {
     let content = fs::read_to_string(path).into_diagnostic()?;
-    
+
     match flux_syntax::parse(&content) {
         Ok(ast) => {
             println!("✓ Successfully parsed {}", path);
@@ -93,7 +93,7 @@ fn parse_file(path: &str) -> Result<()> {
 
 fn compile_file(input_path: &str, output_path: &str) -> Result<()> {
     let content = fs::read_to_string(input_path).into_diagnostic()?;
-    
+
     match flux_wasm::compile_to_wasm(&content) {
         Ok(wasm) => {
             fs::write(output_path, &wasm).into_diagnostic()?;
@@ -110,12 +110,12 @@ fn compile_file(input_path: &str, output_path: &str) -> Result<()> {
 
 fn check_file(path: &str) -> Result<()> {
     let content = fs::read_to_string(path).into_diagnostic()?;
-    
+
     match flux_syntax::parse(&content) {
         Ok(ast) => {
             println!("✓ {} is valid", path);
             println!("  {} items found", ast.items.len());
-            
+
             // List functions
             for item in &ast.items {
                 match item {
@@ -124,8 +124,11 @@ fn check_file(path: &str) -> Result<()> {
                         println!("  - {}fn {}", export_marker, func.name);
                     }
                     flux_syntax::Item::Import(import) => {
-                        println!("  - import {{ {} }} from \"{}\"", 
-                                 import.items.join(", "), import.module);
+                        println!(
+                            "  - import {{ {} }} from \"{}\"",
+                            import.items.join(", "),
+                            import.module
+                        );
                     }
                 }
             }

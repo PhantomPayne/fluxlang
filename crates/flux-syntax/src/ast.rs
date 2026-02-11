@@ -56,14 +56,8 @@ pub struct Import {
 pub enum Type {
     Int(Span),
     String(Span),
-    Table {
-        element: Box<Type>,
-        span: Span,
-    },
-    Named {
-        name: String,
-        span: Span,
-    },
+    Table { element: Box<Type>, span: Span },
+    Named { name: String, span: Span },
 }
 
 impl Type {
