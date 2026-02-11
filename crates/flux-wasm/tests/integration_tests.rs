@@ -167,15 +167,15 @@ fn test_multiple_functions() {
 }
 
 #[test]
-fn test_recursive_function() {
-    // Test recursive function calls
+fn test_function_with_parameter() {
+    // Test function with parameter
     let source = r#"
-        fn factorial(n: int) -> int {
+        fn identity(n: int) -> int {
             return n
         }
 
         fn main() -> int {
-            return factorial(5)
+            return identity(5)
         }
     "#;
     let wasm_bytes = compile_to_component(source).expect("Compilation failed");

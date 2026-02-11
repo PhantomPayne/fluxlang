@@ -53,6 +53,11 @@ impl WasmCodegen {
         Self {}
     }
 
+    /// Generate a unique key for a function type signature
+    fn type_signature_key(param_types: &[ValType], return_type: ValType) -> String {
+        format!("{:?}->{:?}", param_types, return_type)
+    }
+
     /// Compile a Flux source file to a WASM component
     pub fn compile_component(&mut self, ast: &SourceFile) -> Result<Vec<u8>> {
         // Generate the core module
@@ -110,15 +115,12 @@ impl WasmCodegen {
                     .map_or(ValType::I32, |ty| self.flux_type_to_valtype(ty));
 
                 // Check if we already have this type signature
-                let type_key = format!("{:?}->{:?}", param_types, return_type);
-                let _type_idx = if let Some(&existing_idx) = type_index_map.get(&type_key) {
-                    existing_idx
-                } else {
+                let type_key = Self::type_signature_key(&param_types, return_type);
+                type_index_map.entry(type_key).or_insert_with(|| {
                     let idx = types.len();
                     types.ty().function(param_types.clone(), vec![return_type]);
-                    type_index_map.insert(type_key, idx);
                     idx
-                };
+                });
             }
         }
         module.section(&types);
@@ -144,7 +146,7 @@ impl WasmCodegen {
                     .as_ref()
                     .map_or(ValType::I32, |ty| self.flux_type_to_valtype(ty));
 
-                let type_key = format!("{:?}->{:?}", param_types, return_type);
+                let type_key = Self::type_signature_key(&param_types, return_type);
                 let type_idx = type_index_map[&type_key];
                 functions.function(type_idx);
             }
