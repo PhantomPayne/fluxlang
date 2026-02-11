@@ -22,8 +22,8 @@ fn test_parse_label_literals() {
 }
 
 #[test]
-fn test_parse_table_type() {
-    let input = r#"fn process(data: Table<int>) -> Table<string> { data }"#;
+fn test_parse_bool_float_types() {
+    let input = r#"fn process(flag: bool, value: float) -> int { 42 }"#;
     let result = parse(input);
     insta::assert_debug_snapshot!(result);
 }
@@ -37,7 +37,7 @@ fn test_parse_plan_skeleton() {
 
 #[test]
 fn test_parse_import_statement() {
-    let input = r#"import { Table } from "std""#;
+    let input = r#"import { Date, Time } from "std""#;
     let result = parse(input);
     insta::assert_debug_snapshot!(result);
 }
@@ -45,8 +45,8 @@ fn test_parse_import_statement() {
 #[test]
 fn test_parse_complex_pipeline() {
     let input = r#"
-fn analyze(data: Table<int>) -> int {
-    data |> filter(#active) |> sum
+fn analyze(value: int) -> int {
+    value |> filter(#active) |> sum
 }
 "#;
     let result = parse(input);
@@ -96,8 +96,8 @@ fn test_parse_temporal_types_duration() {
 }
 
 #[test]
-fn test_parse_temporal_types_table() {
-    let input = r#"fn get_dates(dates: Table<Date>) -> Table<Timestamp> { dates }"#;
+fn test_parse_bool_float_literals() {
+    let input = r#"fn test() { true } fn test2() { false } fn test3() { 3.14 }"#;
     let result = parse(input);
     insta::assert_debug_snapshot!(result);
 }

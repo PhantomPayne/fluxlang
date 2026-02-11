@@ -1,0 +1,98 @@
+---
+source: crates/flux-syntax/tests/parser_tests.rs
+expression: result
+---
+Ok(
+    SourceFile {
+        items: [
+            Function(
+                Function {
+                    is_export: false,
+                    name: "test",
+                    params: [],
+                    return_type: None,
+                    body: Block {
+                        stmts: [
+                            Bool {
+                                value: true,
+                                span: Span {
+                                    start: 12,
+                                    end: 16,
+                                },
+                            },
+                        ],
+                        span: Span {
+                            start: 10,
+                            end: 18,
+                        },
+                    },
+                    labels: [],
+                    span: Span {
+                        start: 0,
+                        end: 18,
+                    },
+                },
+            ),
+            Function(
+                Function {
+                    is_export: false,
+                    name: "test2",
+                    params: [],
+                    return_type: None,
+                    body: Block {
+                        stmts: [
+                            Bool {
+                                value: false,
+                                span: Span {
+                                    start: 32,
+                                    end: 37,
+                                },
+                            },
+                        ],
+                        span: Span {
+                            start: 30,
+                            end: 39,
+                        },
+                    },
+                    labels: [],
+                    span: Span {
+                        start: 19,
+                        end: 39,
+                    },
+                },
+            ),
+            Function(
+                Function {
+                    is_export: false,
+                    name: "test3",
+                    params: [],
+                    return_type: None,
+                    body: Block {
+                        stmts: [
+                            Float {
+                                value: 3.14,
+                                span: Span {
+                                    start: 53,
+                                    end: 57,
+                                },
+                            },
+                        ],
+                        span: Span {
+                            start: 51,
+                            end: 59,
+                        },
+                    },
+                    labels: [],
+                    span: Span {
+                        start: 40,
+                        end: 59,
+                    },
+                },
+            ),
+        ],
+        span: Span {
+            start: 0,
+            end: 59,
+        },
+    },
+)

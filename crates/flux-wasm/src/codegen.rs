@@ -57,6 +57,16 @@ impl WasmCodegen {
             Expr::Int { value, .. } => {
                 func.instruction(&Instruction::I32Const(*value as i32));
             }
+            Expr::Float { value, .. } => {
+                func.instruction(&Instruction::F64Const(*value));
+            }
+            Expr::Bool { value, .. } => {
+                func.instruction(&Instruction::I32Const(if *value { 1 } else { 0 }));
+            }
+            Expr::String { .. } => {
+                // Strings are not yet fully supported - return placeholder
+                func.instruction(&Instruction::I32Const(0));
+            }
             Expr::Binary {
                 op, left, right, ..
             } => {

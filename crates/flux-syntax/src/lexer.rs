@@ -27,8 +27,10 @@ pub enum TokenKind {
     TyInt,
     #[token("string")]
     TyString,
-    #[token("Table")]
-    TyTable,
+    #[token("bool")]
+    TyBool,
+    #[token("float")]
+    TyFloat,
     #[token("Project")]
     TyProject,
     // Temporal types
@@ -86,6 +88,12 @@ pub enum TokenKind {
     // Literals
     #[regex(r"[0-9]+", priority = 2)]
     LitInt,
+    #[regex(r"[0-9]+\.[0-9]+", priority = 3)]
+    LitFloat,
+    #[token("true")]
+    LitTrue,
+    #[token("false")]
+    LitFalse,
     #[regex(r#""([^"\\]|\\["\\bnfrt]|u[a-fA-F0-9]{4})*""#)]
     LitString,
     #[regex(r"#[a-zA-Z_][a-zA-Z0-9_]*")]
@@ -172,12 +180,13 @@ mod tests {
     }
 
     #[test]
-    fn test_tokenize_table_type() {
-        let input = "Table<int>";
+    fn test_tokenize_bool_float_types() {
+        let input = "bool float true false 3.14";
         let tokens = tokenize(input);
-        assert_eq!(tokens[0].kind, TokenKind::TyTable);
-        assert_eq!(tokens[1].kind, TokenKind::OpLt);
-        assert_eq!(tokens[2].kind, TokenKind::TyInt);
-        assert_eq!(tokens[3].kind, TokenKind::OpGt);
+        assert_eq!(tokens[0].kind, TokenKind::TyBool);
+        assert_eq!(tokens[1].kind, TokenKind::TyFloat);
+        assert_eq!(tokens[2].kind, TokenKind::LitTrue);
+        assert_eq!(tokens[3].kind, TokenKind::LitFalse);
+        assert_eq!(tokens[4].kind, TokenKind::LitFloat);
     }
 }

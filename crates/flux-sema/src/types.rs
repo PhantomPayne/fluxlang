@@ -5,9 +5,8 @@ use std::fmt;
 pub enum TypeInfo {
     Int,
     String,
-    Table {
-        element: Box<TypeInfo>,
-    },
+    Bool,
+    Float,
     Named {
         name: String,
     },
@@ -34,7 +33,8 @@ impl fmt::Display for TypeInfo {
         match self {
             TypeInfo::Int => write!(f, "int"),
             TypeInfo::String => write!(f, "string"),
-            TypeInfo::Table { element } => write!(f, "Table<{}>", element),
+            TypeInfo::Bool => write!(f, "bool"),
+            TypeInfo::Float => write!(f, "float"),
             TypeInfo::Named { name } => write!(f, "{}", name),
             TypeInfo::Function { params, ret } => {
                 write!(f, "(")?;
@@ -131,13 +131,8 @@ mod tests {
         // Test all TypeInfo variants for completeness
         assert_eq!(TypeInfo::Int.to_string(), "int");
         assert_eq!(TypeInfo::String.to_string(), "string");
-        assert_eq!(
-            TypeInfo::Table {
-                element: Box::new(TypeInfo::Int)
-            }
-            .to_string(),
-            "Table<int>"
-        );
+        assert_eq!(TypeInfo::Bool.to_string(), "bool");
+        assert_eq!(TypeInfo::Float.to_string(), "float");
         assert_eq!(
             TypeInfo::Named {
                 name: "MyType".to_string()
@@ -158,15 +153,11 @@ mod tests {
     }
 
     #[test]
-    fn test_table_with_temporal_element() {
-        let table_date = TypeInfo::Table {
-            element: Box::new(TypeInfo::Date),
+    fn test_function_with_bool_float() {
+        let func_type = TypeInfo::Function {
+            params: vec![TypeInfo::Bool, TypeInfo::Float],
+            ret: Box::new(TypeInfo::Int),
         };
-        assert_eq!(table_date.to_string(), "Table<Date>");
-
-        let table_timestamp = TypeInfo::Table {
-            element: Box::new(TypeInfo::Timestamp),
-        };
-        assert_eq!(table_timestamp.to_string(), "Table<Timestamp>");
+        assert_eq!(func_type.to_string(), "(bool, float) -> int");
     }
 }
