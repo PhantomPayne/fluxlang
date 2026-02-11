@@ -70,11 +70,66 @@ impl Default for TypeEnv {
 }
 
 /// Type checker for Flux
-pub struct TypeChecker {}
+pub struct TypeChecker {
+    /// Function registry mapping function names to their types
+    functions: HashMap<String, TypeInfo>,
+}
 
 impl TypeChecker {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            functions: HashMap::new(),
+        }
+    }
+
+    /// Create a new type checker with a function registry
+    pub fn with_functions(functions: HashMap<String, TypeInfo>) -> Self {
+        Self { functions }
+    }
+
+    /// Build function registry from AST
+    pub fn build_function_registry(ast: &flux_syntax::SourceFile) -> HashMap<String, TypeInfo> {
+        let mut functions = HashMap::new();
+        
+        for item in &ast.items {
+            if let flux_syntax::Item::Function(func) = item {
+                let params = func
+                    .params
+                    .iter()
+                    .map(|param| {
+                        param.ty.as_ref().map_or(TypeInfo::Unknown, |ty| {
+                            Self::type_from_ast(ty)
+                        })
+                    })
+                    .collect();
+
+                let ret = func
+                    .return_type
+                    .as_ref()
+                    .map_or(TypeInfo::Unknown, |ty| Self::type_from_ast(ty));
+
+                functions.insert(
+                    func.name.clone(),
+                    TypeInfo::Function {
+                        params,
+                        ret: Box::new(ret),
+                    },
+                );
+            }
+        }
+        
+        functions
+    }
+
+    /// Convert AST type to TypeInfo
+    fn type_from_ast(ty: &flux_syntax::Type) -> TypeInfo {
+        match ty {
+            flux_syntax::Type::Int(_) => TypeInfo::Int,
+            flux_syntax::Type::String(_) => TypeInfo::String,
+            flux_syntax::Type::Bool(_) => TypeInfo::Bool,
+            flux_syntax::Type::Float(_) => TypeInfo::Float,
+            flux_syntax::Type::Named { name, .. } => TypeInfo::Named { name: name.clone() },
+        }
     }
 
     /// Infer the type of an expression given an environment
@@ -152,17 +207,81 @@ impl TypeChecker {
         }
     }
 
-    /// Type check function calls (placeholder)
+    /// Type check function calls
     fn check_call(
         &self,
-        _func: &flux_syntax::Expr,
-        _args: &[flux_syntax::Expr],
-        _env: &TypeEnv,
-        _span: flux_errors::Span,
+        func: &flux_syntax::Expr,
+        args: &[flux_syntax::Expr],
+        env: &TypeEnv,
+        span: flux_errors::Span,
     ) -> flux_errors::Result<TypeInfo> {
-        // For now, assume function calls return Unknown
-        // Full implementation would look up function type and check arguments
-        Ok(TypeInfo::Unknown)
+        // Resolve function name
+        let func_name = match func {
+            flux_syntax::Expr::Var { name, .. } => name,
+            _ => {
+                return Err(flux_errors::FluxError::TypeError {
+                    message: "Function calls must use a simple identifier".to_string(),
+                    span: span.to_source_span(),
+                });
+            }
+        };
+
+        // Look up function type in registry
+        let func_type = self.functions.get(func_name).ok_or_else(|| {
+            flux_errors::FluxError::UnknownIdentifier {
+                name: func_name.clone(),
+                span: span.to_source_span(),
+            }
+        })?;
+
+        // Extract parameters and return type
+        let (params, ret) = match func_type {
+            TypeInfo::Function { params, ret } => (params, ret),
+            _ => {
+                return Err(flux_errors::FluxError::TypeError {
+                    message: format!("{} is not a function", func_name),
+                    span: span.to_source_span(),
+                });
+            }
+        };
+
+        // Check arity
+        if args.len() != params.len() {
+            return Err(flux_errors::FluxError::TypeError {
+                message: format!(
+                    "Function {} expects {} argument(s), but {} were provided",
+                    func_name,
+                    params.len(),
+                    args.len()
+                ),
+                span: span.to_source_span(),
+            });
+        }
+
+        // Check argument types
+        for (i, (arg, expected_type)) in args.iter().zip(params.iter()).enumerate() {
+            let arg_type = self.infer_expr(arg, env)?;
+            
+            // Allow Unknown types to pass (for untyped parameters)
+            if arg_type != *expected_type
+                && arg_type != TypeInfo::Unknown
+                && *expected_type != TypeInfo::Unknown
+            {
+                return Err(flux_errors::FluxError::TypeError {
+                    message: format!(
+                        "Argument {} to function {}: expected type {}, but got {}",
+                        i + 1,
+                        func_name,
+                        expected_type,
+                        arg_type
+                    ),
+                    span: arg.span().to_source_span(),
+                });
+            }
+        }
+
+        // Return the function's return type
+        Ok((**ret).clone())
     }
 
     /// Type check blocks
@@ -331,5 +450,163 @@ mod tests {
         let result = checker.infer_expr(&let_expr, &env);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), TypeInfo::Int);
+    }
+
+    #[test]
+    fn test_build_function_registry() {
+        let source = r#"
+            fn add(x: int, y: int) -> int { return x + y }
+            fn greet(name: string) -> string { return "Hello" }
+        "#;
+        let ast = flux_syntax::parse(source).unwrap();
+        let registry = TypeChecker::build_function_registry(&ast);
+
+        assert_eq!(registry.len(), 2);
+        
+        let add_type = registry.get("add").unwrap();
+        assert!(matches!(add_type, TypeInfo::Function { .. }));
+        if let TypeInfo::Function { params, ret } = add_type {
+            assert_eq!(params.len(), 2);
+            assert_eq!(params[0], TypeInfo::Int);
+            assert_eq!(params[1], TypeInfo::Int);
+            assert_eq!(**ret, TypeInfo::Int);
+        }
+
+        let greet_type = registry.get("greet").unwrap();
+        if let TypeInfo::Function { params, ret } = greet_type {
+            assert_eq!(params.len(), 1);
+            assert_eq!(params[0], TypeInfo::String);
+            assert_eq!(**ret, TypeInfo::String);
+        }
+    }
+
+    #[test]
+    fn test_function_call_valid() {
+        let source = "fn add(x: int, y: int) -> int { return x + y }";
+        let ast = flux_syntax::parse(source).unwrap();
+        let registry = TypeChecker::build_function_registry(&ast);
+        let checker = TypeChecker::with_functions(registry);
+        let env = TypeEnv::new();
+
+        // Build call: add(1, 2)
+        let func = flux_syntax::Expr::Var {
+            name: "add".to_string(),
+            span: flux_errors::Span::new(0, 3),
+        };
+        let arg1 = flux_syntax::Expr::Int {
+            value: 1,
+            span: flux_errors::Span::new(4, 5),
+        };
+        let arg2 = flux_syntax::Expr::Int {
+            value: 2,
+            span: flux_errors::Span::new(7, 8),
+        };
+        let call = flux_syntax::Expr::Call {
+            func: Box::new(func),
+            args: vec![arg1, arg2],
+            span: flux_errors::Span::new(0, 9),
+        };
+
+        let result = checker.infer_expr(&call, &env);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), TypeInfo::Int);
+    }
+
+    #[test]
+    fn test_function_call_wrong_arity() {
+        let source = "fn add(x: int, y: int) -> int { return x + y }";
+        let ast = flux_syntax::parse(source).unwrap();
+        let registry = TypeChecker::build_function_registry(&ast);
+        let checker = TypeChecker::with_functions(registry);
+        let env = TypeEnv::new();
+
+        // Build call: add(1) - missing argument
+        let func = flux_syntax::Expr::Var {
+            name: "add".to_string(),
+            span: flux_errors::Span::new(0, 3),
+        };
+        let arg1 = flux_syntax::Expr::Int {
+            value: 1,
+            span: flux_errors::Span::new(4, 5),
+        };
+        let call = flux_syntax::Expr::Call {
+            func: Box::new(func),
+            args: vec![arg1],
+            span: flux_errors::Span::new(0, 6),
+        };
+
+        let result = checker.infer_expr(&call, &env);
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            flux_errors::FluxError::TypeError { message, .. } => {
+                assert!(message.contains("expects 2 argument"));
+                assert!(message.contains("but 1 were provided"));
+            }
+            _ => panic!("Expected TypeError for arity mismatch"),
+        }
+    }
+
+    #[test]
+    fn test_function_call_wrong_type() {
+        let source = "fn add(x: int, y: int) -> int { return x + y }";
+        let ast = flux_syntax::parse(source).unwrap();
+        let registry = TypeChecker::build_function_registry(&ast);
+        let checker = TypeChecker::with_functions(registry);
+        let env = TypeEnv::new();
+
+        // Build call: add(1, 3.14) - wrong type for second argument
+        let func = flux_syntax::Expr::Var {
+            name: "add".to_string(),
+            span: flux_errors::Span::new(0, 3),
+        };
+        let arg1 = flux_syntax::Expr::Int {
+            value: 1,
+            span: flux_errors::Span::new(4, 5),
+        };
+        let arg2 = flux_syntax::Expr::Float {
+            value: 3.14,
+            span: flux_errors::Span::new(7, 11),
+        };
+        let call = flux_syntax::Expr::Call {
+            func: Box::new(func),
+            args: vec![arg1, arg2],
+            span: flux_errors::Span::new(0, 12),
+        };
+
+        let result = checker.infer_expr(&call, &env);
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            flux_errors::FluxError::TypeError { message, .. } => {
+                assert!(message.contains("expected type int"));
+                assert!(message.contains("but got float"));
+            }
+            _ => panic!("Expected TypeError for type mismatch"),
+        }
+    }
+
+    #[test]
+    fn test_function_call_unknown_function() {
+        let checker = TypeChecker::new();
+        let env = TypeEnv::new();
+
+        // Build call to unknown function: foo()
+        let func = flux_syntax::Expr::Var {
+            name: "foo".to_string(),
+            span: flux_errors::Span::new(0, 3),
+        };
+        let call = flux_syntax::Expr::Call {
+            func: Box::new(func),
+            args: vec![],
+            span: flux_errors::Span::new(0, 5),
+        };
+
+        let result = checker.infer_expr(&call, &env);
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            flux_errors::FluxError::UnknownIdentifier { name, .. } => {
+                assert_eq!(name, "foo");
+            }
+            _ => panic!("Expected UnknownIdentifier error"),
+        }
     }
 }
