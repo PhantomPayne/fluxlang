@@ -69,7 +69,7 @@ fn test_unknown_function_fails() {
     let result = compile_to_component(source);
     assert!(result.is_err());
     let err_msg = result.unwrap_err().to_string();
-    assert!(err_msg.contains("Unknown builtin function"));
+    assert!(err_msg.contains("Unknown function"));
 }
 
 #[test]
