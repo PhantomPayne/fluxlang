@@ -9,6 +9,8 @@ authors.workspace = true
 flux-syntax = { path = "../flux-syntax" }
 flux-errors = { path = "../flux-errors" }
 wasm-encoder.workspace = true
+wit-bindgen.workspace = true
+wit-component.workspace = true
 
 [dev-dependencies]
 wasmtime.workspace = true

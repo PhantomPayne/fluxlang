@@ -1,0 +1,69 @@
+package flux:core@0.1.0;
+
+/// Temporal types for date/time handling
+interface temporal {
+    /// Calendar date only (YYYY-MM-DD)
+    record date {
+        year: s32,
+        month: u8,
+        day: u8,
+    }
+
+    /// Time of day only (HH:mm:ss.nanos)
+    record time {
+        hour: u8,
+        minute: u8,
+        second: u8,
+        nanosecond: u32,
+    }
+
+    /// Date + time + timezone offset
+    record datetime {
+        date: date,
+        time: time,
+        /// Timezone offset in seconds from UTC
+        timezone-offset: s32,
+    }
+
+    /// Absolute UTC timestamp (seconds + nanos since Unix epoch)
+    record timestamp {
+        seconds: s64,
+        nanoseconds: u32,
+    }
+
+    /// Duration supporting all time units
+    record duration {
+        years: s32,
+        months: s32,
+        days: s32,
+        hours: s32,
+        minutes: s32,
+        seconds: s64,
+        nanoseconds: u32,
+    }
+}
+
+/// Core runtime interface
+interface runtime {
+    use temporal.{date, time, datetime, timestamp, duration};
+
+    /// Value type for Flux expressions
+    variant value {
+        int(s64),
+        float(f64),
+        bool(bool),
+        string(string),
+        date(date),
+        time(time),
+        datetime(datetime),
+        timestamp(timestamp),
+        duration(duration),
+    }
+
+    /// Evaluate a Flux expression and return a value
+    eval: func(expr: string) -> result<value, string>;
+}
+
+world flux-runtime {
+    export runtime;
+}
