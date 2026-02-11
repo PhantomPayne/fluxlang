@@ -127,6 +127,11 @@ impl SymbolBridge {
     pub fn symbol_at_position(&self, file_id: FileId, offset: usize) -> Option<Symbol> {
         self.symbol_table.find_symbol_at_position(file_id, offset)
     }
+
+    /// Get access to the underlying symbol table for semantic checking
+    pub fn symbol_table(&self) -> &SymbolTable {
+        &self.symbol_table
+    }
 }
 
 impl Default for SymbolBridge {

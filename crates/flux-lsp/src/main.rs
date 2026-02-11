@@ -1,5 +1,7 @@
 use dashmap::DashMap;
-use flux_sema::{FileId, SymbolBridge, Vfs};
+use flux_errors::FluxError;
+use flux_sema::{check_semantics, FileId, SymbolBridge, Vfs};
+use miette::SourceSpan;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tower_lsp::jsonrpc::Result;
@@ -27,13 +29,43 @@ impl FluxLanguageServer {
         if let Some(file_data) = self.vfs.get_file(file_id) {
             match flux_syntax::parse(&file_data.content) {
                 Ok(ast) => {
+                    // Analyze symbols first
                     self.symbol_bridge.analyze_file(file_id, &ast);
+                    
+                    // Run semantic checks
+                    let symbol_table = self.symbol_bridge.symbol_table();
+                    let errors = check_semantics(&ast, symbol_table, file_id);
+                    
+                    // Convert errors to diagnostics
+                    let diagnostics: Vec<Diagnostic> = errors
+                        .iter()
+                        .map(|e| flux_error_to_diagnostic(e, &file_data.content))
+                        .collect();
+                    
+                    // Publish diagnostics
+                    if let Some(uri) = self.file_id_to_uri(file_id) {
+                        let client = self.client.clone();
+                        tokio::spawn(async move {
+                            client.publish_diagnostics(uri, diagnostics, None).await;
+                        });
+                    }
                 }
                 Err(_) => {
-                    // Handle parse errors
+                    // Handle parse errors - for now we just don't publish diagnostics
+                    // In the future, we could publish parse errors as diagnostics too
                 }
             }
         }
+    }
+
+    fn file_id_to_uri(&self, file_id: FileId) -> Option<Url> {
+        // Find the URL for a given file_id
+        for entry in self.document_map.iter() {
+            if *entry.value() == file_id {
+                return Some(entry.key().clone());
+            }
+        }
+        None
     }
 }
 
@@ -58,6 +90,14 @@ impl LanguageServer for FluxLanguageServer {
                     trigger_characters: Some(vec![".".to_string(), ":".to_string()]),
                     ..Default::default()
                 }),
+                diagnostic_provider: Some(DiagnosticServerCapabilities::Options(DiagnosticOptions {
+                    identifier: Some("flux-lsp".to_string()),
+                    inter_file_dependencies: false,
+                    workspace_diagnostics: false,
+                    work_done_progress_options: WorkDoneProgressOptions {
+                        work_done_progress: None,
+                    },
+                })),
                 ..Default::default()
             },
         })
@@ -151,6 +191,81 @@ fn position_to_offset(content: &str, position: Position) -> usize {
     }
 
     offset
+}
+
+/// Convert FluxError to LSP Diagnostic
+fn flux_error_to_diagnostic(error: &FluxError, content: &str) -> Diagnostic {
+    let (span, message, code) = match error {
+        FluxError::Syntax { message, span } => (span, message.clone(), "flux::syntax"),
+        FluxError::TypeError { message, span } => (span, message.clone(), "flux::type_error"),
+        FluxError::Semantic { message, span } => (span, message.clone(), "flux::semantic"),
+        FluxError::UnknownIdentifier { name, span } => {
+            (span, format!("Unknown identifier: {}", name), "flux::unknown_identifier")
+        }
+        FluxError::WasmError { message } => {
+            // WASM errors don't have spans, so we return a diagnostic at position 0
+            return Diagnostic {
+                range: Range {
+                    start: Position { line: 0, character: 0 },
+                    end: Position { line: 0, character: 0 },
+                },
+                severity: Some(DiagnosticSeverity::ERROR),
+                code: Some(NumberOrString::String("flux::wasm".to_string())),
+                message: message.clone(),
+                ..Default::default()
+            };
+        }
+    };
+
+    let range = span_to_lsp_range(span, content);
+
+    Diagnostic {
+        range,
+        severity: Some(DiagnosticSeverity::ERROR),
+        code: Some(NumberOrString::String(code.to_string())),
+        message,
+        ..Default::default()
+    }
+}
+
+/// Convert a SourceSpan to an LSP Range
+fn span_to_lsp_range(span: &SourceSpan, content: &str) -> Range {
+    let start_offset = span.offset();
+    let end_offset = start_offset + span.len();
+
+    let (start_line, start_char) = offset_to_position_utf16(content, start_offset);
+    let (end_line, end_char) = offset_to_position_utf16(content, end_offset);
+
+    Range {
+        start: Position { line: start_line as u32, character: start_char as u32 },
+        end: Position { line: end_line as u32, character: end_char as u32 },
+    }
+}
+
+/// Convert a byte offset to (line, character) position with UTF-16 code units
+fn offset_to_position_utf16(content: &str, offset: usize) -> (usize, usize) {
+    let mut line = 0;
+    let mut character = 0;
+    let mut current_offset = 0;
+
+    for c in content.chars() {
+        if current_offset >= offset {
+            break;
+        }
+        
+        if c == '\n' {
+            line += 1;
+            character = 0;
+        } else {
+            // LSP uses UTF-16 code units for character positions
+            // Count UTF-16 code units for this character
+            character += c.len_utf16();
+        }
+        
+        current_offset += c.len_utf8();
+    }
+
+    (line, character)
 }
 
 #[tokio::main]
