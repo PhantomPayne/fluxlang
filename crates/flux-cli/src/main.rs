@@ -106,11 +106,7 @@ fn compile_file(input_path: &str, output_path: &str, use_core: bool) -> Result<(
     match result {
         Ok(wasm) => {
             fs::write(output_path, &wasm).into_diagnostic()?;
-            let format = if use_core {
-                "core module"
-            } else {
-                "component"
-            };
+            let format = if use_core { "core module" } else { "component" };
             println!(
                 "✓ Successfully compiled {} to {} ({})",
                 input_path, output_path, format
