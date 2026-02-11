@@ -8,3 +8,10 @@ authors.workspace = true
 [dependencies]
 miette.workspace = true
 thiserror.workspace = true
+
+[dependencies.tower-lsp]
+workspace = true
+optional = true
+
+[features]
+lsp = ["tower-lsp"]

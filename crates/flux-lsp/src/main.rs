@@ -1,5 +1,5 @@
 use dashmap::DashMap;
-use flux_sema::{FileId, SymbolBridge, Vfs};
+use flux_sema::{check_semantics, FileId, SymbolBridge, Vfs};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tower_lsp::jsonrpc::Result;
@@ -27,13 +27,43 @@ impl FluxLanguageServer {
         if let Some(file_data) = self.vfs.get_file(file_id) {
             match flux_syntax::parse(&file_data.content) {
                 Ok(ast) => {
+                    // Analyze symbols first
                     self.symbol_bridge.analyze_file(file_id, &ast);
+                    
+                    // Run semantic checks
+                    let symbol_table = self.symbol_bridge.symbol_table();
+                    let errors = check_semantics(&ast, symbol_table, file_id);
+                    
+                    // Convert errors to diagnostics
+                    let diagnostics: Vec<Diagnostic> = errors
+                        .iter()
+                        .map(|e| e.to_lsp_diagnostic(&file_data.content))
+                        .collect();
+                    
+                    // Publish diagnostics
+                    if let Some(uri) = self.file_id_to_uri(file_id) {
+                        let client = self.client.clone();
+                        tokio::spawn(async move {
+                            client.publish_diagnostics(uri, diagnostics, None).await;
+                        });
+                    }
                 }
                 Err(_) => {
-                    // Handle parse errors
+                    // Handle parse errors - for now we just don't publish diagnostics
+                    // In the future, we could publish parse errors as diagnostics too
                 }
             }
         }
+    }
+
+    fn file_id_to_uri(&self, file_id: FileId) -> Option<Url> {
+        // Find the URL for a given file_id
+        for entry in self.document_map.iter() {
+            if *entry.value() == file_id {
+                return Some(entry.key().clone());
+            }
+        }
+        None
     }
 }
 
@@ -58,6 +88,14 @@ impl LanguageServer for FluxLanguageServer {
                     trigger_characters: Some(vec![".".to_string(), ":".to_string()]),
                     ..Default::default()
                 }),
+                diagnostic_provider: Some(DiagnosticServerCapabilities::Options(DiagnosticOptions {
+                    identifier: Some("flux-lsp".to_string()),
+                    inter_file_dependencies: false,
+                    workspace_diagnostics: false,
+                    work_done_progress_options: WorkDoneProgressOptions {
+                        work_done_progress: None,
+                    },
+                })),
                 ..Default::default()
             },
         })

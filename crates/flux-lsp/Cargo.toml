@@ -12,7 +12,7 @@ path = "src/main.rs"
 [dependencies]
 flux-syntax = { path = "../flux-syntax" }
 flux-sema = { path = "../flux-sema" }
-flux-errors = { path = "../flux-errors" }
+flux-errors = { path = "../flux-errors", features = ["lsp"] }
 tower-lsp.workspace = true
 tokio.workspace = true
 serde.workspace = true
